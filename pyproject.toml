@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rcstudio-local"
+version = "0.1.0"
+description = "Local Reservoir Computing Studio with CLI, GUI, HTTP and MCP"
+readme = "README_CN.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+dependencies = [
+    "numpy>=1.26,<3",
+    "scipy>=1.12,<2"
+]
+
+[project.optional-dependencies]
+gui = ["PySide6>=6.7,<7", "pyqtgraph>=0.13.7,<0.15"]
+mcp = ["mcp>=2.0,<3"]
+dev = ["pytest>=8,<10"]
+all = ["PySide6>=6.7,<7", "pyqtgraph>=0.13.7,<0.15", "mcp>=2.0,<3", "pytest>=8,<10"]
+
+[project.scripts]
+rcstudio = "rcstudio.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["rcstudio*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

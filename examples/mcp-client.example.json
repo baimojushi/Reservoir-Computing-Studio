@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "rcstudio": {
+      "command": "C:\\REPLACE_WITH_YOUR_RCSTUDIO_PATH\\.venv\\Scripts\\python.exe",
+      "args": ["-m", "rcstudio", "mcp"]
+    }
+  }
+}
