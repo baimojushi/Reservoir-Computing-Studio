@@ -1,0 +1,650 @@
+{
+  "version": 1,
+  "entries": {
+    "ui.help": {
+      "title": "帮助与教学：从这里开始",
+      "category": "入门与界面",
+      "summary": "不用先学会所有术语。把鼠标停在控件上看简要介绍，按 F1 看原理和示例，再用课程走一遍真实操作。",
+      "steps": [
+        "悬停后阅读“是什么、怎样用”。鼠标移入浮窗可继续滚动阅读。",
+        "按 F1 或点击“固定并深入了解”，在学习中心阅读完整说明。",
+        "打开“新手课程”，选择入门、真实操作或结果解读；可暂停后继续。"
+      ],
+      "explanation": "帮助和教学负责解释界面并提示操作；采集、重连、标定保存、导入和训练均由你亲自确认执行。课程会检查实际操作或状态；暂时无法执行的步骤可以标记为“跳过”，系统会单独保留这一状态，待具备条件后再验收。",
+      "example": "遇到“谱半径”等新术语，可以先阅读浮窗，再通过 RC 参数课程逐步理解。",
+      "pitfalls": "课程完成表示指定学习检查已满足；硬件精度、模型泛化和研究结论还需要各自的专项验收。",
+      "risk": "",
+      "scope": "",
+      "source": "learning_support/qt.py; learning_support/model.py",
+      "keywords": ""
+    },
+    "ui.theme": {
+      "title": "浅色 / 深色主题",
+      "category": "入门与界面",
+      "summary": "切换界面的显示配色，让文字、控件和帮助浮窗适应阅读环境。数据和计算结果保持原状。",
+      "steps": [
+        "点击一次切换主题。",
+        "观察帮助浮窗和学习中心也随之切换；设置会在下次启动时保留。"
+      ],
+      "explanation": "界面颜色表达操作层级和状态；判断模型表现时请查看评估指标。两种主题使用相同的数据、参数和业务代码。",
+      "example": "白天使用浅色主题，较暗的环境改用深色主题；同一实验的 RMSE 在两种主题下保持一致。",
+      "pitfalls": "判断误差大小时，请同时阅读坐标轴、曲线图例与数值指标。",
+      "risk": "",
+      "scope": "",
+      "source": "material_theme.py / rcstudio/gui.py",
+      "keywords": ""
+    },
+    "ui.tabs": {
+      "title": "工作区标签页",
+      "category": "入门与界面",
+      "summary": "切换正在看的面板。同一份数据可能有曲线、状态或文字诊断多种视角。",
+      "steps": [
+        "点击标签名查看对应面板；键盘可聚焦后切换。",
+        "需要解释该页时，在页内控件上悬停或按 F1。"
+      ],
+      "explanation": "切换标签页仅改变展示内容；采集与训练由各自的操作按钮控制。图表和文字面板可能显示上次选中的记录，要同时核对实验 ID 或设备状态。",
+      "example": "先看预测曲线，再到实验诊断核对当前实验的参数和数据划分。",
+      "pitfalls": "面板空白时，请检查数据是否可用、记录是否选中及设备是否连接；缺失数据应按缺失状态处理。",
+      "risk": "",
+      "scope": "",
+      "source": "QTabWidget instances",
+      "keywords": ""
+    },
+    "ui.fallback": {
+      "title": "扩展控件与所在区域",
+      "category": "入门与界面",
+      "summary": "这是界面内部或扩展组件。优先参考其所在区域的说明，再按控件自身文字操作。",
+      "steps": [
+        "按 F1 搜索相邻功能的名称。",
+        "涉及保存、设备连接或提交任务前，先核对作用范围。"
+      ],
+      "explanation": "第三方绘图组件的内部按钮和操作系统原生文件选择器不由本帮助层重写。业务控件使用专门的说明，内部子控件继承区域说明。",
+      "example": "图表缩放工具只调整观看范围；训练由独立的任务按钮启动。",
+      "pitfalls": "遇到含义不明确的写入类按钮，先查看帮助和作用范围；查看对应功能说明。",
+      "risk": "",
+      "scope": "",
+      "source": "Native Qt / third-party child widgets",
+      "keywords": ""
+    },
+    "rc.project": {
+      "title": "研究项目选择",
+      "category": "数据与项目",
+      "summary": "选择要研究的问题：通用 ESN 适合单列时间序列；EBrush Motion Predictor V1 使用电子毛笔惯性数据。",
+      "steps": [
+        "初学者先选通用 ESN 和 Sine 合成信号。",
+        "要处理毛笔日志时选择 EBrush 内部项目，再导入采集文件。",
+        "切换项目后重新核对神经元数、预热和预测步长。"
+      ],
+      "explanation": "两个项目共用实验工作台，但数据格式和默认值不同。切换项目会重设 units、washout、horizon，不会自动重置其余全部参数，也不会提交训练。",
+      "example": "通用默认 120 个神经元、50 步预热、1 步预测；EBrush 默认 96 个神经元、40 步预热、10 步预测。",
+      "pitfalls": "六通道毛笔数据请通过 EBrush 专用导入与预测任务处理；切换项目后请重新核对当前表单中的参数。",
+      "risk": "切换会改变部分待提交参数；已保存的实验不会改变。",
+      "scope": "RC Studio 负责离线数据、ESN 训练和实验评估；不打开毛笔串口、相机，也不写入 E-Brush 的标定。",
+      "source": "rcstudio/gui.py:_project_changed",
+      "keywords": ""
+    },
+    "rc.dataset": {
+      "title": "数据来源：Sine、Mackey–Glass、CSV",
+      "category": "数据与项目",
+      "summary": "模型必须先有按时间排列的观测。这里选择内置信号或已导入的一个数值序列。",
+      "steps": [
+        "第一次选“合成信号 · Sine”，不需要任何设备。",
+        "掌握流程后可比较 Mackey–Glass，或导入真实 CSV。",
+        "导入 CSV 后在“CSV 数据列”指定需要预测的数值列。"
+      ],
+      "explanation": "Sine 用于练习周期信号；Mackey–Glass 是本软件生成的另一类动态信号；CSV 来自你的文件。这些来源提供通用单变量输入；毛笔项目使用独立的六通道数据格式。",
+      "example": "温度表包含时间、温度和湿度时，可以将“温度”选为预测信号列，时间戳仅用于时序定位。",
+      "pitfalls": "合成数据跑得好不能证明真实毛笔能预测；输入必须按时间排序，不能先随机打乱。",
+      "risk": "",
+      "scope": "RC Studio 负责离线数据、ESN 训练和实验评估；不打开毛笔串口、相机，也不写入 E-Brush 的标定。",
+      "source": "rcstudio/core.py:build_signal; rcstudio/gui.py:_refresh_datasets",
+      "keywords": ""
+    },
+    "rc.length": {
+      "title": "序列长度",
+      "category": "数据与项目",
+      "summary": "决定通用实验使用多少个采样点。序列长度以采样点计数；实际持续时间由采样率决定，训练轮数另行设置。",
+      "steps": [
+        "入门保留 2000 点。",
+        "增加预热或预测步长后，确保仍有足够的训练、验证和测试样本。"
+      ],
+      "explanation": "GUI 允许 150～20000 点。合成信号按长度生成；CSV 会按配置读取可用序列。数据越多通常计算量越大，但覆盖不同状态比单纯复制数据更重要。",
+      "example": "200 Hz 的信号中，2000 点名义上约 10 秒；换算持续时间前请先确认采样率。",
+      "pitfalls": "序列长度描述单条时间序列的点数；epoch 表示模型训练遍历次数。长度过短而 washout 很大会触发样本不足检查。",
+      "risk": "",
+      "scope": "",
+      "source": "rcstudio/config.py:DEFAULT; rcstudio/core.py:build_signal",
+      "keywords": ""
+    },
+    "rc.column": {
+      "title": "CSV 数据列",
+      "category": "数据与项目",
+      "summary": "在通用 CSV 数据集里选择哪一列作为观测信号，其他列不会自动成为多通道输入。",
+      "steps": [
+        "导入 CSV 后展开选择器。",
+        "优先明确选择具有物理意义的数值列，核对名称和单位。"
+      ],
+      "explanation": "自动识别会推荐可能的数值列；最终预测目标需由使用者按任务定义确认。通用引擎接收一维信号；毛笔六通道应使用 EBrush 专用导入。",
+      "example": "CSV 同时包含 sample_id 与 gyro_norm 时，通常将 gyro_norm 设为预测信号列，sample_id 保留为索引。",
+      "pitfalls": "数据列选择器没有候选时，检查 CSV 表头、数值格式和导入错误。",
+      "risk": "",
+      "scope": "",
+      "source": "rcstudio/gui.py:_dataset_changed; rcstudio/storage.py",
+      "keywords": ""
+    },
+    "rc.import_csv": {
+      "title": "导入通用 CSV 文件",
+      "category": "数据与项目",
+      "summary": "把本地 CSV 登记到 RC 工作区，以便之后选择数值列并创建实验。导入本身不会训练模型。",
+      "steps": [
+        "选择文件；取消文件选择不会导入。",
+        "导入后检查数据来源和 CSV 数据列。",
+        "保留原始文件备份，使用有明确表头的数值数据。"
+      ],
+      "explanation": "数据集导入和实验提交分开，便于重复使用同一数据而比较参数。实际可用列由导入器检查，不会自动理解列的物理含义。",
+      "example": "先导入温度.csv，再选“温度”列，保持其他参数不变创建第一条实验。",
+      "pitfalls": "毛笔的 .brlog 和多通道交接文件应从 EBrush 项目导入，不走通用 CSV 按钮。",
+      "risk": "导入将在 RC 工作区创建数据集记录；E-Brush 采集配置继续由 E-Brush 维护。",
+      "scope": "RC Studio 负责离线数据、ESN 训练和实验评估；不打开毛笔串口、相机，也不写入 E-Brush 的标定。",
+      "source": "rcstudio/gui.py:_import_csv",
+      "keywords": ""
+    },
+    "rc.ebrush": {
+      "title": "EBrush Motion Predictor V1",
+      "category": "电子毛笔研究",
+      "summary": "用三轴角速度和三轴加速度这六个观测量，预测未来的角速度模长，先回答“毛笔接下来转得多快”。",
+      "steps": [
+        "切换到 EBrush 项目。",
+        "先用模拟样本熟悉流程，再导入真实独立录制。",
+        "核对 horizon=10、数据质量和基线。"
+      ],
+      "explanation": "默认名义采样率是 200 Hz，10 个采样点对应 50 ms。当前预测目标是角速度模长；笔尖位置和压力属于后续单独建模的任务。当前研究仅使用惯性通道，不会把霍尔或相机数据自动当成真值。",
+      "example": "笔快速转动时角速度模长上升；模型尝试提前 50 ms 预测这个强度变化。",
+      "pitfalls": "50 ms 由名义采样率与预测步数换算得到；软件执行耗时另行测量；不规则采样仍须检查。",
+      "risk": "",
+      "scope": "RC Studio 负责离线数据、ESN 训练和实验评估；不打开毛笔串口、相机，也不写入 E-Brush 的标定。",
+      "source": "rcstudio/ebrush.py:FEATURE_NAMES,DEFAULT_EBRUSH,train_ebrush",
+      "keywords": ""
+    },
+    "rc.ebrush_import": {
+      "title": "导入毛笔采集文件 / 移交清单",
+      "category": "电子毛笔研究",
+      "summary": "离线解析 .brlog、指定格式 CSV、ZIP 或 JSON 移交清单，构建 RC 自己管理的有效连续片段。",
+      "steps": [
+        "先在 E-Brush 完成采集并保留原始文件。",
+        "选择文件；使用移交清单时让其引用的源数据保持可访问。",
+        "等待后台解析完成，再检查片段数和独立记录数。"
+      ],
+      "explanation": "移交清单携带源文件位置与 SHA-256 等信息，不包含整份采样数据。导入器校验并处理无效帧和时间中断，同一录制的片段保留共同 recording_id。",
+      "example": "一份长 .brlog 切出 12 段，仍只算一份独立录制，不能伪装成 12 次独立实验。",
+      "pitfalls": "哈希不匹配应核对是否选错或改动了原始文件；哈希校验失败时请核对源文件，保留原始清单供追溯。零有效片段时应回到采集质量排查。",
+      "risk": "导入仅在 RC 工作区生成派生数据，原始日志保持完整。大文件解析期间请查看任务状态，完成后再提交后续任务。",
+      "scope": "RC Studio 负责离线数据、ESN 训练和实验评估；不打开毛笔串口、相机，也不写入 E-Brush 的标定。",
+      "source": "rcstudio/ebrush.py:import_source; rcstudio/gui.py:ImportWorker",
+      "keywords": ""
+    },
+    "rc.demo": {
+      "title": "生成模拟样本",
+      "category": "电子毛笔研究",
+      "summary": "在 RC 工作区生成合成的毛笔运动样本，用来练习导入、会话选择、训练和结果查看，不需要硬件。",
+      "steps": [
+        "主动点击生成。",
+        "在会话表里检查带 DEMO 标记的记录。",
+        "训练练习时只选模拟记录；正式评估另选真实记录。"
+      ],
+      "explanation": "模拟数据验证的是软件链路是否可以工作，不证明传感器精度或真实书写泛化。已有真实记录时，界面可能默认不勾选模拟样本，要明确选择。",
+      "example": "可以通过合成数据练习 50 ms 预测流程；报告中请保留“合成数据”标记。",
+      "pitfalls": "反复点击会产生额外合成记录；合成样本请明确标记为 demo；真实采集的独立性以来源记录为准。",
+      "risk": "会写入本地模拟会话，但不会自动启动训练。",
+      "scope": "RC Studio 负责离线数据、ESN 训练和实验评估；不打开毛笔串口、相机，也不写入 E-Brush 的标定。",
+      "source": "rcstudio/ebrush.py:make_demo; rcstudio/gui.py:_make_demo",
+      "keywords": ""
+    },
+    "rc.sessions": {
+      "title": "采集会话与训练勾选",
+      "category": "电子毛笔研究",
+      "summary": "每行是可供训练的数据片段。左侧勾选控制本轮实验使用哪些片段；“来源”和“帧数”帮助核对内容。",
+      "steps": [
+        "勾选所需记录，取消不相关或 DEMO 样本。",
+        "确认至少来自三份独立真实录制，再做真实训练/验证/测试。",
+        "请根据 recording_id 和采集来源判断独立记录数。"
+      ],
+      "explanation": "片段是连续数据窗口，独立录制是来源分组。正式划分按 recording_id 隔离，同一录制产生的片段不能跨训练集和测试集。",
+      "example": "A.brlog 的 8 段加 B.brlog 的 4 段只属于两份录制；还需要另一份独立录制才能三组划分。",
+      "pitfalls": "同一个文件复制改名不应作为新增独立实验。只勾选一条时训练可能因独立组不足而被拒绝，这是保护措施。",
+      "risk": "",
+      "scope": "",
+      "source": "rcstudio/gui.py:_refresh_sessions,_selected_sessions; rcstudio/ebrush.py",
+      "keywords": ""
+    },
+    "rc.sessions_refresh": {
+      "title": "刷新采集会话",
+      "category": "电子毛笔研究",
+      "summary": "重新读取 RC 工作区里的已导入会话，适合刚用命令行或另一个窗口完成导入时使用。",
+      "steps": [
+        "点击刷新。",
+        "重新检查来源、DEMO 标记、帧数和勾选状态。"
+      ],
+      "explanation": "刷新只更新列表，不会重新读取设备或再次导入原始文件。现有条目的选择尽量保留；新增条目依真实/模拟情况设默认选择。",
+      "example": "CLI 导入了新 .brlog 后，点击刷新使它出现在 GUI 会话表。",
+      "pitfalls": "刷新后列表仍为空时，请检查 RC 导入记录与本地服务状态。",
+      "risk": "",
+      "scope": "RC Studio 负责离线数据、ESN 训练和实验评估；不打开毛笔串口、相机，也不写入 E-Brush 的标定。",
+      "source": "rcstudio/gui.py:_refresh_sessions",
+      "keywords": ""
+    },
+    "rc.topology": {
+      "title": "ESN 拓扑示意图",
+      "category": "网络参数",
+      "summary": "把网络想成三段：输入接收数据，储备池形成时间记忆，读出层把状态组合成预测。",
+      "steps": [
+        "先辨认 INPUT、RESERVOIR、READOUT。",
+        "改变神经元数后请查看参数值；拓扑图中的圆点仅帮助理解结构。"
+      ],
+      "explanation": "这是示意图，不逐一画出真实网络全部神经元与连接。当前 ESN 固定随机输入和循环权重，主要拟合线性读出层；实际网络连接由程序依据配置生成；拓扑图用于解释结构。",
+      "example": "标注 96 个神经元时，拓扑图仍用少量圆点表现整体结构。",
+      "pitfalls": "拓扑图展示结构规模；模型表现请通过相同数据划分下的验证、测试指标与基线比较。",
+      "risk": "",
+      "scope": "",
+      "source": "rcstudio/gui.py:TopologyCanvas; rcstudio/core.py:train_esn",
+      "keywords": ""
+    },
+    "rc.parameters": {
+      "title": "模型参数区：先固定基线再调参",
+      "category": "网络参数",
+      "summary": "这些数字决定记忆、反应速度和读出层拟合方式。新手先用默认值成功跑通，再一次只改一个参数。",
+      "steps": [
+        "先保存或记住第一条实验 ID 和配置。",
+        "一次改变一个参数，固定数据来源、划分和随机种子。",
+        "先用验证结果挑方案，再报告独立测试结果。"
+      ],
+      "explanation": "同时改变数据、种子和多个参数，就无法判断是哪一项造成差异。当前界面设置的是下一次提交的配置，不能实时改写已经完成的实验。",
+      "example": "比较 96 和 120 个神经元时，保持其余参数、会话选择、horizon 不变。",
+      "pitfalls": "调参应依据验证集，测试集保留用于最终独立评估；最优模型应结合验证集误差和测试集最终评估共同判断。",
+      "risk": "",
+      "scope": "",
+      "source": "rcstudio/config.py; rcstudio/gui.py:_config",
+      "keywords": ""
+    },
+    "rc.model.units": {
+      "title": "储备池神经元数（units）",
+      "category": "网络参数",
+      "summary": "储备池里用于表示历史模式的状态维度。更多神经元给模型更多表达空间，也增加内存和计算成本。",
+      "steps": [
+        "入门使用当前项目默认值：通用 120，毛笔 96。",
+        "有基线结果后，再比较较小与较大的规模，其他设置保持不变。"
+      ],
+      "explanation": "每个采样点更新一组内部状态，读出层利用这些状态预测目标。当前允许 10～350；规模变大并不保证泛化变好，数据不足时可能只把训练数据拟合得更紧。",
+      "example": "96 → 120 的比较要记录验证 RMSE、测试 RMSE、运行时间，而不只看训练误差。",
+      "pitfalls": "图中圆点用于示意，实际神经元个数以参数值为准。大模型如果没有超过简单基线，应先查数据和任务设置。",
+      "risk": "",
+      "scope": "",
+      "source": "rcstudio/config.py:model.units; rcstudio/core.py; rcstudio/ebrush.py",
+      "keywords": "units"
+    },
+    "rc.model.spectral_radius": {
+      "title": "谱半径（spectral_radius）",
+      "category": "网络参数",
+      "summary": "控制储备池内部循环权重的整体强度，可以把它理解为“旧信息在网络里回响得有多强”。",
+      "steps": [
+        "先保留默认 0.90。",
+        "需要比较时做小幅变化，固定种子和其他参数。",
+        "同时看预测误差、状态图和稳定性。"
+      ],
+      "explanation": "谱半径是循环权重矩阵特征值绝对值的最大值。它与泄漏率、输入强度和非线性共同影响储备池动态记忆与稳定性，实际效果需通过数据验证。",
+      "example": "在相同数据上比较 0.8、0.9 和 1.0 的预测表现，重点观察变化段误差与稳定性。",
+      "pitfalls": "谱半径衡量循环权重矩阵的反馈尺度；准确率和有效记忆长度需要通过实验评估。参数选择应依据验证集表现与稳定性。",
+      "risk": "",
+      "scope": "",
+      "source": "rcstudio/config.py:model.spectral_radius; rcstudio/core.py; rcstudio/ebrush.py",
+      "keywords": "spectral_radius"
+    },
+    "rc.model.leak_rate": {
+      "title": "泄漏率（leak_rate）",
+      "category": "网络参数",
+      "summary": "控制新状态取代旧状态的速度。数值较小通常更平缓，数值较大通常更快响应当前输入。",
+      "steps": [
+        "默认 0.35 可作为起点。",
+        "变化太迟钝时尝试稍增；噪声很大时可比较稍减。",
+        "每次调整后重新训练并比较验证集。"
+      ],
+      "explanation": "更新式为 x新=(1−α)x旧+α·tanh(循环项+输入项+偏置)，α 就是泄漏率，范围 0.01～1。当 α=1 时，循环项仍可携带来自过去状态的信息。",
+      "example": "α=0.35 表示这一更新公式中旧状态线性保留 0.65，再加入 0.35 倍的新非线性响应。",
+      "pitfalls": "0.35 表示内部状态更新中的泄漏系数，采样数据保持完整。它是模型内部更新参数，不改变采样频率。",
+      "risk": "",
+      "scope": "",
+      "source": "rcstudio/config.py:model.leak_rate; rcstudio/core.py; rcstudio/ebrush.py",
+      "keywords": "leak_rate"
+    },
+    "rc.model.density": {
+      "title": "连接密度（density）",
+      "category": "网络参数",
+      "summary": "控制随机储备池内部连接有多稠密。数值 0.08 表示随机生成时约 8% 的位置保留连接。",
+      "steps": [
+        "先保留 0.08。",
+        "比较稀疏或稠密网络时保持神经元数和随机种子一致。"
+      ],
+      "explanation": "实际有限网络的连接比例会有随机波动。当前实现先构造矩阵再转为稀疏形式，因此降低密度不意味着初始化内存按比例减少。",
+      "example": "120 个神经元下，密度 0.08 和 0.20 表示不同的内部连接稀疏度；训练样本量由数据集决定。",
+      "pitfalls": "密度太低可能让有效动态不足；太高也不保证更好。密度控制储备池内部连接比例；dropout 是另一种正则化方法。",
+      "risk": "",
+      "scope": "",
+      "source": "rcstudio/config.py:model.density; rcstudio/core.py; rcstudio/ebrush.py",
+      "keywords": "density"
+    },
+    "rc.model.input_scaling": {
+      "title": "输入缩放（input_scaling）",
+      "category": "网络参数",
+      "summary": "调节输入信号进入储备池时的影响强度，类似决定新观测的“音量”。",
+      "steps": [
+        "先使用默认 0.70。",
+        "结合状态图和验证误差做小幅比较。"
+      ],
+      "explanation": "信号先按训练数据计算的统计量归一化，再通过输入权重进入 tanh。缩放过强可能使大量状态接近 ±1 而丢失细微变化；过弱可能难以体现输入，但具体行为还取决于其他参数。",
+      "example": "相同归一化信号，在 0.3 和 0.7 下可能激发不同幅度的状态；目标输出的物理单位并不会被永久改变。",
+      "pitfalls": "输入缩放作用于模型内部驱动幅度；传感器量程和预测输出单位仍按数据定义。调这个值不能修复错误的 CSV 单位。",
+      "risk": "",
+      "scope": "",
+      "source": "rcstudio/config.py:model.input_scaling; rcstudio/core.py; rcstudio/ebrush.py",
+      "keywords": "input_scaling"
+    },
+    "rc.model.ridge": {
+      "title": "岭回归系数（ridge）",
+      "category": "网络参数",
+      "summary": "给读出层加一个避免权重过大的约束，用来在贴合训练数据和保持稳定之间取得平衡。",
+      "steps": [
+        "默认 0.00001，即 1e−5。",
+        "可按 1e−6、1e−5、1e−4 等数量级依次比较，观察验证误差变化。"
+      ],
+      "explanation": "读出层使用岭回归，目标中增加与权重平方有关的惩罚。系数更大通常限制更强；过强可能欠拟合，过弱可能更敏感。ridge 控制读出层岭回归的正则化强度；梯度优化的学习率是另一类参数。",
+      "example": "训练误差很低而验证误差较高时，可在保持数据划分不变的条件下比较更强的正则化。",
+      "pitfalls": "0 表示正则化惩罚项的系数为零；训练仍照常执行。请用验证集选择正则化系数，测试集用于最终报告。",
+      "risk": "",
+      "scope": "",
+      "source": "rcstudio/config.py:model.ridge; rcstudio/core.py; rcstudio/ebrush.py",
+      "keywords": "ridge"
+    },
+    "rc.model.washout": {
+      "title": "预热步数（washout）",
+      "category": "网络参数",
+      "summary": "启动储备池时先让状态适应输入，舍弃开头若干步用于读出层拟合的影响。",
+      "steps": [
+        "通用默认 50 步，毛笔默认 40 步。",
+        "预热应小于可用训练片段长度，修改后核对样本不足提示。"
+      ],
+      "explanation": "内部状态从初值开始，前几步可能更多反映初值而非真实历史。预热用来减轻这部分影响。预热步数描述开始拟合读出层之前舍弃的状态点数；训练轮次和 GUI 等待时间另行计算。",
+      "example": "200 Hz 名义采样率下，毛笔 40 步约 0.2 秒；每个有效片段仍要留下足够的可训练数据。",
+      "pitfalls": "预热长度应兼顾初始状态稳定性与可用样本数量。对短片段设置很长预热，可能使几乎没有样本可供训练。",
+      "risk": "",
+      "scope": "",
+      "source": "rcstudio/config.py:model.washout; rcstudio/core.py; rcstudio/ebrush.py",
+      "keywords": "washout"
+    },
+    "rc.model.horizon": {
+      "title": "预测步长（horizon）与预测时距",
+      "category": "网络参数",
+      "summary": "模型用当前和过去的观测，预测往后第几个采样点。此处以采样点为单位；毫秒数根据采样率换算。",
+      "steps": [
+        "通用默认 1；毛笔默认 10。",
+        "先核对采样率，再用“步长 ÷ 采样率”换算秒。",
+        "不规则采样要先检查时间连续性。"
+      ],
+      "explanation": "预测时距 T=h/f。毛笔项目按名义 200 Hz 解释默认 h=10，得到 0.05 秒。增大步长通常改变任务难度；本软件依据持续观测的输入进行前向预测；自主生成需要另一种任务设置。",
+      "example": "horizon=10 且 200 Hz → 50 ms；同样 10 步在 100 Hz → 100 ms。",
+      "pitfalls": "按 200 Hz 名义采样率，填入 10 个采样点对应 50 ms；程序计算延迟请使用运行时间统计。",
+      "risk": "",
+      "scope": "",
+      "source": "rcstudio/config.py:model.horizon; rcstudio/core.py; rcstudio/ebrush.py",
+      "keywords": "horizon"
+    },
+    "rc.model.seed": {
+      "title": "随机种子（seed）",
+      "category": "网络参数",
+      "summary": "让随机网络的生成过程可以重现，方便判断结果变化到底来自参数还是随机性。",
+      "steps": [
+        "初次使用默认 42。",
+        "单参数对比先固定种子。",
+        "定下候选方案后，再用多个种子检验结果是否稳健。"
+      ],
+      "explanation": "相同数据、配置、软件环境和种子通常更便于复现，但不同数值库或平台可能有微小差别。数据生成种子与模型种子是不同配置项；此控件修改模型的随机种子。",
+      "example": "把神经元数从 96 改到 120 时先保持模型种子 42；之后可比较多个种子的平均表现与波动范围。",
+      "pitfalls": "随机种子用于复现实验中的随机初始化；训练次数和准确率需要分别记录。只报告最好的一次随机结果容易夸大效果。",
+      "risk": "",
+      "scope": "",
+      "source": "rcstudio/config.py:model.seed; rcstudio/core.py; rcstudio/ebrush.py",
+      "keywords": "seed"
+    },
+    "rc.run": {
+      "title": "启动训练",
+      "category": "训练与实验管理",
+      "summary": "把当前项目、数据选择和参数作为一条新实验提交给 RC 本地计算服务。",
+      "steps": [
+        "确认项目、数据、horizon 和参数。",
+        "主动点击启动；查看新实验 ID 和状态。",
+        "训练完成后比较测试误差与持续性基线。"
+      ],
+      "explanation": "GUI 提交任务，服务执行计算并保存实验产物。每次提交都创建新的实验记录；已完成模型独立保留；界面教学不会替你点击它。",
+      "example": "先用 Sine 的默认参数创建实验 A，再只改 units 创建实验 B，通过记录比较，而不覆盖 A。",
+      "pitfalls": "提交失败先读错误：服务未启动、样本太少、独立记录不足、参数超界是不同问题。提交失败时请读取错误、排除原因后再试一次。",
+      "risk": "会使用本地 CPU、内存并写入实验结果；连续提交训练前请检查已有任务与可用计算资源。",
+      "scope": "RC Studio 负责离线数据、ESN 训练和实验评估；不打开毛笔串口、相机，也不写入 E-Brush 的标定。",
+      "source": "rcstudio/gui.py:_submit; rcstudio/service.py",
+      "keywords": ""
+    },
+    "rc.stop": {
+      "title": "停止所选实验",
+      "category": "训练与实验管理",
+      "summary": "向服务请求取消当前选中的实验。此操作会请求取消选中的 RC 实验；历史记录与 E-Brush 采集状态分别保留。",
+      "steps": [
+        "核对当前实验 ID。",
+        "点击停止，等待服务在检查点响应。",
+        "看最终状态是否 cancelled / interrupted，而不只看按钮是否按下。"
+      ],
+      "explanation": "取消是协作式的，计算中的某些阶段需要返回检查点才能响应。正式结果报告请使用状态为 finished 且具有完整指标的实验。",
+      "example": "正在比较实验 B 时先选中 B 再停止，避免误取消另一条任务。",
+      "pitfalls": "发出取消请求后请观察实验状态变化；如需进一步排查，请查看服务日志并使用针对该任务的控制方式。",
+      "risk": "可能使当前实验无法得到完整模型和指标，但不会自动删除原始数据。",
+      "scope": "RC Studio 负责离线数据、ESN 训练和实验评估；不打开毛笔串口、相机，也不写入 E-Brush 的标定。",
+      "source": "rcstudio/gui.py:_stop; rcstudio/core.py:_check_cancel",
+      "keywords": ""
+    },
+    "rc.load": {
+      "title": "载入所选实验参数",
+      "category": "训练与实验管理",
+      "summary": "把历史实验的配置放回左侧表单，方便复现或修改后新建一次实验。",
+      "steps": [
+        "先在最近实验表中选中一行。",
+        "点击载入；检查项目、数据和参数是否符合预期。",
+        "需要新训练时再主动点击启动。"
+      ],
+      "explanation": "此操作将已保存实验的参数载入当前表单；模型部署与新数据预测需要另行启动。旧实验记录保留，当前待提交表单会被替换。",
+      "example": "想复现上次 96 个神经元实验时载入它，再只改 ridge 作为新实验。",
+      "pitfalls": "载入配置后，请核对所选会话及数据来源文件的完整性，再提交新实验。",
+      "risk": "会覆盖尚未提交的表单参数，但不覆盖历史实验。",
+      "scope": "",
+      "source": "rcstudio/gui.py:_load_config",
+      "keywords": ""
+    },
+    "rc.history": {
+      "title": "最近实验与实验 ID",
+      "category": "训练与实验管理",
+      "summary": "按行浏览实验的项目、运行状态、进度、测试误差和耗时。点击一行，右侧查看的是这条实验。",
+      "steps": [
+        "先用实验 ID 确认记录。",
+        "查看状态 finished 后再解读完整指标。",
+        "比较时同时核对数据集和配置。"
+      ],
+      "explanation": "实验 ID 是追溯配置、模型和诊断的重要标识。表中进度说明任务执行阶段；模型准确率需要参考独立评估指标；不同预测任务的误差也不能脱离单位直接比较。",
+      "example": "50% 进度只表示任务执行到某个阶段，不表示预测正确率 50%。",
+      "pitfalls": "状态为 finished 且包含完整指标时才表示训练完成；点击记录后到诊断页读取 error。",
+      "risk": "",
+      "scope": "",
+      "source": "rcstudio/gui.py:_refresh,_select_row,_show_selected",
+      "keywords": ""
+    },
+    "rc.refresh": {
+      "title": "刷新最近实验",
+      "category": "训练与实验管理",
+      "summary": "重新从 RC 本地服务读取实验列表与当前结果，不会新建训练任务。",
+      "steps": [
+        "CLI 或 MCP 创建了新实验后可以手动刷新。",
+        "仍连接异常时检查 RC 服务和端口。"
+      ],
+      "explanation": "界面已有定时刷新；此按钮是主动更新入口。刷新只读取 RC 数据，不会访问 E-Brush 设备。",
+      "example": "在 PowerShell 提交训练后，回 GUI 刷新即可看到新实验。",
+      "pitfalls": "不断刷新不会让训练更快；出现异常时请先查看错误消息，再决定是否重试。",
+      "risk": "",
+      "scope": "RC Studio 负责离线数据、ESN 训练和实验评估；不打开毛笔串口、相机，也不写入 E-Brush 的标定。",
+      "source": "rcstudio/gui.py:_refresh",
+      "keywords": ""
+    },
+    "rc.progress": {
+      "title": "训练进度条",
+      "category": "训练与实验管理",
+      "summary": "显示所选任务的执行进度；预测质量请在评估指标中查看。",
+      "steps": [
+        "同时阅读实验状态。",
+        "进度完成后查看 finished、诊断和测试指标。"
+      ],
+      "explanation": "数据准备、状态计算、读出层拟合和结果保存属于不同阶段。各阶段耗时有所不同，进度比例用于说明执行阶段。",
+      "example": "条形进度达到末尾但任务状态异常时，仍应以状态与错误信息为准。",
+      "pitfalls": "执行进度用于观察工作阶段；运行时长和模型质量请分别查看状态与评估指标。",
+      "risk": "",
+      "scope": "",
+      "source": "rcstudio/gui.py:_show_selected",
+      "keywords": ""
+    },
+    "rc.plot": {
+      "title": "预测曲线：真实值、验证与测试",
+      "category": "结果解读",
+      "summary": "把真实目标和模型预测画到同一时间轴上，直观看预测是否滞后、偏高或漏掉快速动作。",
+      "steps": [
+        "先选中完成的实验。",
+        "结合轴标签和下方颜色说明辨认真实值、验证预测、测试预测。",
+        "放大变化剧烈区段，再看整体指标。"
+      ],
+      "explanation": "显示曲线会抽样以保证交互流畅，不能替代完整数据的指标。测试误差小也可能主要来自大量静止样本，应同时检查动作段。",
+      "example": "毛笔快速转向时预测峰值明显晚于真实峰值，可能说明模型没有提供预期的提前量，即使整体曲线看起来相似。",
+      "pitfalls": "无预测的预热区段或非当前划分区段可能显示空白；缺失区段请按“暂无数据”理解。跨不同单位任务的曲线不可直接混比。",
+      "risk": "",
+      "scope": "",
+      "source": "rcstudio/gui.py:_draw; rcstudio/core.py:sample_traces",
+      "keywords": ""
+    },
+    "rc.states": {
+      "title": "储备池状态图（Reservoir states）",
+      "category": "结果解读",
+      "summary": "用颜色展示部分神经元的内部状态随样本变化，用于检查动态是否丰富或过度饱和。",
+      "steps": [
+        "先运行并选择完成的实验。",
+        "观察是否大量区域长期接近相同极值，或几乎不变化。",
+        "结合输入缩放、谱半径和验证误差一起判断。"
+      ],
+      "explanation": "当前视图根据抽样状态绘制，用于概览储备池的活动模式。tanh 状态具有数值范围，饱和图案可以作为诊断线索；最终结论还需结合验证误差。",
+      "example": "改变 input_scaling 后状态颜色更活跃，但如果测试误差更高，就不能说模型改进了。",
+      "pitfalls": "颜色表示储备池内部状态；注意力、准确率和接触压力各有独立的定义和测量方法。",
+      "risk": "",
+      "scope": "",
+      "source": "rcstudio/gui.py:_draw; rcstudio/core.py:sample_traces",
+      "keywords": ""
+    },
+    "rc.diagnostics": {
+      "title": "实验诊断：指标、配置和错误",
+      "category": "结果解读",
+      "summary": "集中显示所选实验的配置、状态、指标和错误，是核对实验能否复现的依据。",
+      "steps": [
+        "先确认实验 ID。",
+        "看 config 中的数据和模型设置，再看 metrics。",
+        "失败时优先读 error，保留原文用于排查。"
+      ],
+      "explanation": "JSON 只是结构化记录方式：字段名是目录，数值是结果。训练、验证、测试分别回答拟合、选方案和独立评估的问题。",
+      "example": "训练 RMSE 很低而测试 RMSE 很高时，请检查数据变化、过拟合和数据划分。",
+      "pitfalls": "“—”、null 或空字段可能表示不适用或尚未计算，不应替换为 0。",
+      "risk": "",
+      "scope": "",
+      "source": "rcstudio/gui.py:_show_selected; rcstudio/core.py; rcstudio/ebrush.py",
+      "keywords": ""
+    },
+    "rc.rmse": {
+      "title": "测试 RMSE：误差有多大",
+      "category": "结果解读",
+      "summary": "均方根误差衡量预测偏离真实目标的幅度；同一任务、同一测试集和同一单位下，通常越小越好。",
+      "steps": [
+        "先确认查看的是测试集结果，并核对实验 ID。",
+        "与同一测试集的持续性基线比较。",
+        "毛笔项目还要看动作段和静止段表现。"
+      ],
+      "explanation": "RMSE=√平均[(预测−真实)²]，对较大误差比较敏感，单位与目标一致。毛笔角速度模长通常以 rad/s 表达；RMSE 使用与预测目标相同的物理单位。",
+      "example": "ESN RMSE=0.30 rad/s，基线=0.40 rad/s 时，按此指标模型更好；反过来则尚未超过简单方法。",
+      "pitfalls": "只看小数大小而忽略单位、样本范围或数据划分会误导；指标缺失时请标注“暂无计算结果”，并核对实验状态。",
+      "risk": "",
+      "scope": "",
+      "source": "rcstudio/core.py:_scores; rcstudio/gui.py:_show_selected",
+      "keywords": ""
+    },
+    "rc.baseline": {
+      "title": "持续性预测基线",
+      "category": "结果解读",
+      "summary": "一个不需要神经网络的对照：假设未来值等于当前值。它帮助判断复杂模型是否真的增加了价值。",
+      "steps": [
+        "用相同测试集和相同 horizon 比较。",
+        "只有 ESN 误差更低时，才说在该指标上超过了基线。"
+      ],
+      "explanation": "对于变化慢或静止很多的信号，“未来仍然这样”可能非常强。模型表现低于或等于基线时，请如实报告并分析数据、特征和任务难度。",
+      "example": "模型 RMSE=0.42，而基线=0.35，应该报告基线更好，再分析动作覆盖与时间对齐。",
+      "pitfalls": "比较模型与基线时，请统一测试集、预测时距和误差指标，重点查看测试集。",
+      "risk": "",
+      "scope": "",
+      "source": "rcstudio/core.py:persistence_baseline_test; rcstudio/ebrush.py",
+      "keywords": ""
+    },
+    "rc.horizon_metric": {
+      "title": "结果中的预测时距",
+      "category": "结果解读",
+      "summary": "显示当前选中实验当时使用的预测步长或名义毫秒值，不一定等于左侧尚未提交的新设置。",
+      "steps": [
+        "先确认所选实验。",
+        "通用项目读 step；毛笔项目读按 200 Hz 换算的 ms。"
+      ],
+      "explanation": "左侧表单准备下一次实验，右侧卡片说明已有实验。表单和指标卡片分别展示待提交配置与已有实验结果，按各自的更新时机刷新。",
+      "example": "左侧把 horizon 改成 20，但右侧仍选中旧的 10 步实验，50 ms 显示是合理的。",
+      "pitfalls": "这一指标表示预测目标的时间跨度；API、训练和传输延迟有独立的测量口径。",
+      "risk": "",
+      "scope": "",
+      "source": "rcstudio/gui.py:_show_selected",
+      "keywords": ""
+    },
+    "rc.records_metric": {
+      "title": "独立采集会话数",
+      "category": "结果解读",
+      "summary": "表示所选毛笔实验包含多少组独立录制来源，是判断跨记录划分的关键信息。",
+      "steps": [
+        "核对指标与导入来源是否一致。",
+        "至少三份独立录制满足训练/验证/测试隔离的最低结构要求；可靠的科学结论还需更多独立样本。"
+      ],
+      "explanation": "一份日志被分成多个连续片段仍属于同一来源组。组间隔离减少相邻窗口泄漏，但仍需关注同人、同天、同设备等共享因素。",
+      "example": "三个文件来自三次采集可形成最低三组划分，但不能据此宣称对所有使用者都有效。",
+      "pitfalls": "通用项目的此项可能为“—”；请将“—”理解为该项目暂无适用统计，样本数另行查看。",
+      "risk": "",
+      "scope": "",
+      "source": "rcstudio/ebrush.py:recording_id grouping",
+      "keywords": ""
+    },
+    "rc.connection": {
+      "title": "RC 本地服务状态",
+      "category": "训练与实验管理",
+      "summary": "显示 GUI 是否能读取本机 RC 计算服务及所选实验状态。默认回环地址使用端口 8766。",
+      "steps": [
+        "正常启动脚本会按项目逻辑准备本地服务。",
+        "遇到 RC 本地服务异常，请检查脚本输出、服务进程和 8766 端口。"
+      ],
+      "explanation": "GUI 和计算服务分离，界面负责操作与显示，服务负责训练和实验管理。E-Brush 保留自己的 8765 端口，教学不修改这个边界。",
+      "example": "E-Brush 设备正常而 RC 服务未启动时，训练仍不可用；反过来 RC 可以无硬件运行合成实验。",
+      "pitfalls": "请保持本地服务监听在 127.0.0.1，并经授权网关处理远程访问；帮助层不会更改鉴权或访问控制。",
+      "risk": "",
+      "scope": "RC Studio 负责离线数据、ESN 训练和实验评估；不打开毛笔串口、相机，也不写入 E-Brush 的标定。",
+      "source": "rcstudio/client.py; rcstudio/gui.py",
+      "keywords": ""
+    }
+  }
+}

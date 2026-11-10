@@ -1,0 +1,466 @@
+{
+  "version": 1,
+  "courses": [
+    {
+      "id": "rc_first",
+      "title": "01 · 第一条合成信号实验",
+      "description": "从无硬件的 Sine 实验学习一次完整训练与结果判断。",
+      "prerequisites": "RC 本地服务可用；不需要电子毛笔。训练将由你主动点击启动。",
+      "steps": [
+        {
+          "id": "scope",
+          "title": "先分清两个软件",
+          "help": "rc.project",
+          "target": "rc.project",
+          "instruction": "你现在要在 RC Studio 中训练时序模型，设备连接由 E-Brush Studio 管理。应该在哪个软件进行？",
+          "gate": "quiz",
+          "check": "选出最符合说明的答案。",
+          "answers": [
+            "RC Studio：数据、模型与实验。",
+            "E-Brush：接管模型训练数据库。"
+          ],
+          "correct": 0,
+          "feedback": "RC 负责离线研究，E-Brush 负责设备和标定。"
+        },
+        {
+          "id": "generic",
+          "title": "选择通用 ESN",
+          "help": "rc.project",
+          "target": "rc.project",
+          "instruction": "在项目下拉框选择通用 ESN；教程不替你改变项目，因为切换会重置部分参数。",
+          "gate": "predicate",
+          "check": "当前项目为通用 ESN。",
+          "predicate": "rc.generic"
+        },
+        {
+          "id": "sine",
+          "title": "选择 Sine 合成信号",
+          "help": "rc.dataset",
+          "target": "rc.dataset",
+          "instruction": "选择 Sine，序列长度可先保留 2000。使用合成数据练习，不宣称真实设备精度。",
+          "gate": "predicate",
+          "check": "当前通用数据来源为 sine。",
+          "predicate": "rc.sine"
+        },
+        {
+          "id": "defaults",
+          "title": "核对参数与预测目标",
+          "help": "rc.parameters",
+          "target": "rc.parameters",
+          "instruction": "新手可先使用默认参数。确认 horizon 以采样点计数，代表预测目标距离当前时刻的步数。记录当前配置；教程不会替你覆盖待提交值。",
+          "gate": "read",
+          "check": "勾选阅读确认后继续。"
+        },
+        {
+          "id": "submit",
+          "title": "由你启动训练",
+          "help": "rc.run",
+          "target": "rc.run",
+          "instruction": "确认仍为通用 Sine 后，主动点击启动。成功提交才记录这一步，按钮点击但报错不算。",
+          "gate": "event",
+          "check": "当前课程期间确实成功提交了实验。",
+          "event": "rc.run.submitted"
+        },
+        {
+          "id": "finish",
+          "title": "等待这条实验完成",
+          "help": "rc.progress",
+          "target": "rc.progress",
+          "instruction": "教程只观察本课程实际提交的实验，不拿旧结果冒充。本地服务执行训练，查看列表状态。",
+          "gate": "predicate",
+          "check": "本课程提交的 Sine 实验状态为 finished；失败/取消不算完成。",
+          "predicate": "rc.course_finished"
+        },
+        {
+          "id": "baseline",
+          "title": "判断是否超过简单方法",
+          "help": "rc.baseline",
+          "target": "rc.baseline",
+          "instruction": "同一测试集上模型 RMSE=0.42，持续性基线=0.35，应该怎样判断？",
+          "gate": "quiz",
+          "check": "选出最符合说明的答案。",
+          "answers": [
+            "本次模型尚未优于基线。",
+            "因为用了神经网络，所以一定更好。"
+          ],
+          "correct": 0,
+          "feedback": "在同一任务与测试集上，较小的 RMSE 更好，0.35 小于 0.42。"
+        },
+        {
+          "id": "record",
+          "title": "保存可追溯的实验信息",
+          "help": "rc.diagnostics",
+          "target": "rc.diagnostics",
+          "instruction": "在诊断页记录实验 ID、配置、数据、状态与指标。软件已按原流程保存结果，本课程不新增一个虚构的“导出模型”按钮。",
+          "gate": "read",
+          "check": "勾选阅读确认后继续。"
+        }
+      ]
+    },
+    {
+      "id": "rc_parameters",
+      "title": "02 · 用直觉理解 ESN 参数",
+      "description": "用具体问题理解记忆、输入、正则化与时间尺度，不自动改参数。",
+      "prerequisites": "不需要数据或设备；读取参数即可。",
+      "steps": [
+        {
+          "id": "shape",
+          "title": "先看三段结构",
+          "help": "rc.topology",
+          "target": "rc.topology",
+          "instruction": "输入把数据送进来；储备池形成动态状态；读出层组合状态得到预测。图中的圆点用来说明结构；真实神经元数量请读取参数值。",
+          "gate": "read",
+          "check": "勾选阅读确认后继续。"
+        },
+        {
+          "id": "units",
+          "title": "神经元更多就一定更好吗？",
+          "help": "rc.model.units",
+          "target": "rc.model.units",
+          "instruction": "增加神经元数时，哪种做法合理？",
+          "gate": "quiz",
+          "check": "选出最符合说明的答案。",
+          "answers": [
+            "同时比较验证误差、基线和计算成本。",
+            "只要神经元多，结果必然更准。"
+          ],
+          "correct": 0,
+          "feedback": "更大模型不保证泛化更好，也可能增加计算成本。"
+        },
+        {
+          "id": "leak",
+          "title": "理解泄漏率",
+          "help": "rc.model.leak_rate",
+          "target": "rc.model.leak_rate",
+          "instruction": "leak_rate=0.35 在这里表示什么？",
+          "gate": "quiz",
+          "check": "选出最符合说明的答案。",
+          "answers": [
+            "内部状态按旧状态与新响应混合更新。",
+            "丢弃 35% 的传感器数据。"
+          ],
+          "correct": 0,
+          "feedback": "它控制模型内部更新，不删掉传感器采样。"
+        },
+        {
+          "id": "radius",
+          "title": "理解谱半径与动态记忆",
+          "help": "rc.model.spectral_radius",
+          "target": "rc.model.spectral_radius",
+          "instruction": "先用默认 0.90。谱半径影响循环反馈，但实际动态还取决于泄漏率、输入和非线性。有效记忆时长需结合其他参数和实际实验测量。",
+          "gate": "read",
+          "check": "勾选阅读确认后继续。"
+        },
+        {
+          "id": "ridge",
+          "title": "岭回归系数的作用",
+          "help": "rc.model.ridge",
+          "target": "rc.model.ridge",
+          "instruction": "为什么需要 ridge？",
+          "gate": "quiz",
+          "check": "选出最符合说明的答案。",
+          "answers": [
+            "限制读出权重，帮助平衡拟合与稳定。",
+            "设置传感器或 GUI 的采样频率。"
+          ],
+          "correct": 0,
+          "feedback": "ridge 控制读出层正则化强度；硬件参数与学习率分别由其他配置决定。"
+        },
+        {
+          "id": "horizon",
+          "title": "计算名义预测时距",
+          "help": "rc.model.horizon",
+          "target": "rc.model.horizon",
+          "instruction": "在 200 Hz 名义采样率下，horizon=10 对应多少？",
+          "gate": "quiz",
+          "check": "选出最符合说明的答案。",
+          "answers": [
+            "50 ms。",
+            "10 ms。",
+            "500 ms。"
+          ],
+          "correct": 0,
+          "feedback": "10 ÷ 200 秒 = 0.05 秒，也就是 50 ms。"
+        },
+        {
+          "id": "seed",
+          "title": "做一次公平的单参数比较",
+          "help": "rc.model.seed",
+          "target": "rc.model.seed",
+          "instruction": "比较神经元数时哪种方法更容易解释差异？",
+          "gate": "quiz",
+          "check": "选出最符合说明的答案。",
+          "answers": [
+            "固定数据、划分和种子，一次只改神经元数。",
+            "同时改数据、种子和所有参数，然后挑最好结果。"
+          ],
+          "correct": 0,
+          "feedback": "控制其他条件才能更清楚地理解参数影响。"
+        },
+        {
+          "id": "washout",
+          "title": "理解预热步数",
+          "help": "rc.model.washout",
+          "target": "rc.model.washout",
+          "instruction": "预热用于减轻初始状态影响。短数据配上很长预热可能没有足够训练样本。先保证数据长度和时距设置合理。",
+          "gate": "read",
+          "check": "勾选阅读确认后继续。"
+        }
+      ]
+    },
+    {
+      "id": "rc_ebrush_demo",
+      "title": "03 · 无硬件体验毛笔预测",
+      "description": "主动生成 DEMO 会话，训练六通道毛笔项目，理解演示与真实结果的区别。",
+      "prerequisites": "RC 本地服务可用；生成 DEMO 会写入本地样本，但不会自动训练。",
+      "steps": [
+        {
+          "id": "project",
+          "title": "选择 EBrush 内部项目",
+          "help": "rc.project",
+          "target": "rc.project",
+          "instruction": "在项目选择器中切换到 EBrush Motion Predictor V1。",
+          "gate": "predicate",
+          "check": "当前项目为 ebrush_motion_v1。",
+          "predicate": "rc.ebrush"
+        },
+        {
+          "id": "demo",
+          "title": "由你生成模拟样本",
+          "help": "rc.demo",
+          "target": "rc.demo",
+          "instruction": "主动点击“生成模拟样本”。已有真实数据时请注意选择规则；样本不会被当作真实采集。",
+          "gate": "event",
+          "check": "本课程期间生成模拟样本成功，取消或报错不算。",
+          "event": "rc.demo.created"
+        },
+        {
+          "id": "select",
+          "title": "只选 DEMO 会话",
+          "help": "rc.sessions",
+          "target": "rc.sessions",
+          "instruction": "检查会话表，只勾选来自至少三个独立模拟记录的片段，取消真实记录，避免混合。",
+          "gate": "predicate",
+          "check": "勾选全部是 synthetic=true，且至少三个不同 recording_id。",
+          "predicate": "rc.demo_selected"
+        },
+        {
+          "id": "target",
+          "title": "到底在预测什么？",
+          "help": "rc.ebrush",
+          "target": "rc.ebrush",
+          "instruction": "当前 V1 输出是什么？",
+          "gate": "quiz",
+          "check": "选出最符合说明的答案。",
+          "answers": [
+            "未来角速度模长（单位通常为 rad/s）。",
+            "经过验证的毫米级笔尖轨迹和压力。"
+          ],
+          "correct": 0,
+          "feedback": "当前 V1 使用惯性通道预测角速度模长，不能夸大为位置或压力。"
+        },
+        {
+          "id": "submit",
+          "title": "由你提交实验",
+          "help": "rc.run",
+          "target": "rc.run",
+          "instruction": "核对项目、会话和参数后主动启动训练；训练结束后才会保存模型。",
+          "gate": "event",
+          "check": "本课程期间成功提交了一条实验。",
+          "event": "rc.run.submitted"
+        },
+        {
+          "id": "finish",
+          "title": "观察这次演示训练完成",
+          "help": "rc.progress",
+          "target": "rc.progress",
+          "instruction": "保持选中本课提交的实验。教程要求匹配的 EBrush 实验完成，不采用旧实验代替。",
+          "gate": "predicate",
+          "check": "当前课程提交的 EBrush DEMO 实验为 finished。",
+          "predicate": "rc.course_finished"
+        },
+        {
+          "id": "result",
+          "title": "正确解释演示结果",
+          "help": "rc.diagnostics",
+          "target": "rc.diagnostics",
+          "instruction": "读 RMSE 和基线，保留“合成数据”标签。这能练习软件链路，不能证明真实毛笔具有同样精度。",
+          "gate": "read",
+          "check": "勾选阅读确认后继续。"
+        }
+      ]
+    },
+    {
+      "id": "rc_handoff",
+      "title": "04 · 真实数据交接与独立评估",
+      "description": "从 E-Brush 清单/日志到独立录制分组，避免窗口泄漏。",
+      "prerequisites": "有真实文件及其来源记录；至少三份独立录制满足当前数据划分的最低结构要求；稳健的科研结论仍需更大规模验证。",
+      "steps": [
+        {
+          "id": "select",
+          "title": "选择毛笔研究项目",
+          "help": "rc.project",
+          "target": "rc.project",
+          "instruction": "选择 EBrush Motion Predictor V1，以正确处理六通道惯性数据。",
+          "gate": "predicate",
+          "check": "当前项目为毛笔内部项目。",
+          "predicate": "rc.ebrush"
+        },
+        {
+          "id": "files",
+          "title": "拿到清单后还需要什么？",
+          "help": "rc.ebrush_import",
+          "target": "rc.ebrush_import",
+          "instruction": "同事给了你 handoff.json，下一步最重要的是？",
+          "gate": "quiz",
+          "check": "选出最符合说明的答案。",
+          "answers": [
+            "确保引用的原始文件可访问且校验一致。",
+            "删除原始文件，只留下清单。"
+          ],
+          "correct": 0,
+          "feedback": "清单不包含整份采样数据，源文件位置与内容都要核对。"
+        },
+        {
+          "id": "import",
+          "title": "由你导入真实文件",
+          "help": "rc.ebrush_import",
+          "target": "rc.ebrush_import",
+          "instruction": "主动选择 .brlog、支持的 CSV、ZIP 或移交清单。导入成功且保留有效片段才算，不把取消选择视为完成。",
+          "gate": "event",
+          "check": "本课程期间一次导入成功且 imported_episodes 大于 0。",
+          "event": "rc.ebrush.imported"
+        },
+        {
+          "id": "independent",
+          "title": "12 个片段是否等于 12 次采集？",
+          "help": "rc.sessions",
+          "target": "rc.sessions",
+          "instruction": "同一个 .brlog 被切出 12 个片段，它属于多少份独立录制？",
+          "gate": "quiz",
+          "check": "选出最符合说明的答案。",
+          "answers": [
+            "仍是一份。",
+            "自动变成十二份。"
+          ],
+          "correct": 0,
+          "feedback": "同一来源的片段共享 recording_id，必须保持分组隔离。"
+        },
+        {
+          "id": "real",
+          "title": "选择真实的独立录制",
+          "help": "rc.sessions",
+          "target": "rc.sessions",
+          "instruction": "勾选真实数据，取消所有 DEMO。至少三份不同 recording_id；如果只有一份日志，请停止正式评估或明确跳过本步。",
+          "gate": "predicate",
+          "check": "勾选项全部为真实记录，且至少三个不同 recording_id。",
+          "predicate": "rc.real_selected"
+        },
+        {
+          "id": "submit",
+          "title": "核对后主动提交",
+          "help": "rc.run",
+          "target": "rc.run",
+          "instruction": "确认数据划分和 horizon 后主动开始训练。导入与提交是两个独立动作。",
+          "gate": "event",
+          "check": "当前课程期间确实成功提交实验。",
+          "event": "rc.run.submitted"
+        },
+        {
+          "id": "finish",
+          "title": "等这条真实数据实验完成",
+          "help": "rc.progress",
+          "target": "rc.progress",
+          "instruction": "保持选中本课提交的实验。失败时读取错误，不以旧的合成实验代替。",
+          "gate": "predicate",
+          "check": "对应真实 EBrush 实验为 finished。",
+          "predicate": "rc.course_finished"
+        },
+        {
+          "id": "report",
+          "title": "报告基线和结论限制",
+          "help": "rc.diagnostics",
+          "target": "rc.diagnostics",
+          "instruction": "记录数据来源、独立组数、参数、测试误差和基线。模型若未超过基线，也请如实记录结果；跨人泛化结论需要覆盖不同使用者与采集条件的更多数据。",
+          "gate": "read",
+          "check": "勾选阅读确认后继续。"
+        }
+      ]
+    },
+    {
+      "id": "rc_read_results",
+      "title": "05 · 读懂结果，避免被漂亮曲线误导",
+      "description": "把实验 ID、曲线、状态图和指标连起来。",
+      "prerequisites": "最好有一条完成的实验；尚无完成实验时，可以先阅读说明和完成小测，再将实际操作步骤标记为“跳过”。",
+      "steps": [
+        {
+          "id": "choose",
+          "title": "主动选一条实验",
+          "help": "rc.history",
+          "target": "rc.history",
+          "instruction": "在最近实验表里点击要分析的一行，核对 ID 与状态。",
+          "gate": "event",
+          "check": "请完成提示中的实际操作。",
+          "event": "rc.history.clicked"
+        },
+        {
+          "id": "progress",
+          "title": "理解任务进度与模型质量",
+          "help": "rc.progress",
+          "target": "rc.progress",
+          "instruction": "进度条 80% 能说明什么？",
+          "gate": "quiz",
+          "check": "选出最符合说明的答案。",
+          "answers": [
+            "任务执行到某个进度阶段。",
+            "预测准确率达到 80%。"
+          ],
+          "correct": 0,
+          "feedback": "进度表示执行阶段，质量由指标和独立评估决定。"
+        },
+        {
+          "id": "curve",
+          "title": "看曲线的峰值、滞后与空白",
+          "help": "rc.plot",
+          "target": "rc.plot",
+          "instruction": "在预测曲线上比较真实值、验证预测和测试预测。图表为了流畅会抽样；曲线空白通常表示预热段或当前未显示的数据划分；请按缺失状态解读。",
+          "gate": "read",
+          "check": "勾选阅读确认后继续。"
+        },
+        {
+          "id": "states",
+          "title": "状态图只是诊断线索",
+          "help": "rc.states",
+          "target": "rc.states",
+          "instruction": "颜色呈现内部状态活动，模型质量请查看评估指标。饱和与单调可提示问题，但结论必须结合验证误差。",
+          "gate": "read",
+          "check": "勾选阅读确认后继续。"
+        },
+        {
+          "id": "metric",
+          "title": "比较 RMSE 的必要条件",
+          "help": "rc.rmse",
+          "target": "rc.rmse",
+          "instruction": "哪种比较更合理？",
+          "gate": "quiz",
+          "check": "选出最符合说明的答案。",
+          "answers": [
+            "同任务、同测试集、同单位和同预测时距。",
+            "任意两个任务只比较小数谁更小。"
+          ],
+          "correct": 0,
+          "feedback": "RMSE 带有目标单位，任务、数据和时距不同不能直接比。"
+        },
+        {
+          "id": "finish",
+          "title": "检查配置与错误原文",
+          "help": "rc.diagnostics",
+          "target": "rc.diagnostics",
+          "instruction": "记录完整上下文再得出结论。failed/cancelled 不算完成训练；null 或“—”不表示零误差。",
+          "gate": "read",
+          "check": "勾选阅读确认后继续。"
+        }
+      ]
+    }
+  ]
+}

@@ -13,6 +13,8 @@ from .client import Client, ServiceError, current_port, ensure_server
 from .config import DEFAULT, normalize_config
 from .core import predict_with_model, train_esn
 from .storage import Workspace
+from .ebrush import (PROJECT_ID, DEFAULT_EBRUSH, import_source, list_sessions,
+                     make_demo, normalize_ebrush_config)
 
 def output(value):
     print(json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False))
@@ -57,7 +59,34 @@ def parser():
     predict.add_argument("--column")
     predict.add_argument("--output", type=Path)
     sub.add_parser("check", help="Run a standalone built-in ESN self-test")
+    project = sub.add_parser("project", help="Internal RC Studio research projects")
+    projects = project.add_subparsers(dest="project_name", required=True)
+    ebrush = projects.add_parser("ebrush", help="EBrush Motion Predictor V1 (offline)")
+    actions = ebrush.add_subparsers(dest="project_action", required=True)
+    imp = actions.add_parser("import", help="Import .brlog / .csv / .zip / handoff .json")
+    imp.add_argument("source")
+    actions.add_parser("sessions", help="List imported EBrush episodes/recordings")
+    demo = actions.add_parser("demo", help="Create 6 independent synthetic recordings")
+    demo.add_argument("--train", action="store_true", help="Train only created demo sessions")
+    training = actions.add_parser("train", help="Train recording-disjoint EBrush ESN")
+    training.add_argument("--config", type=Path)
+    training.add_argument("--wait", action="store_true")
+    training.add_argument("--timeout", type=int, default=300)
+    actions.add_parser("runs", help="List EBrush experiments")
     return p
+
+def wait_run(client, row, timeout):
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        row = client.run(row["id"])
+        if row["status"] not in ("queued", "running"):
+            output(row)
+            return 0 if row["status"] == "finished" else 1
+        time.sleep(0.4)
+    output({"id": row["id"], "status": "timeout",
+            "message": "Job continues in background; use stop to cancel"})
+    return 2
+
 
 def main(argv=None):
     args = parser().parse_args(argv)
@@ -84,6 +113,37 @@ def main(argv=None):
                 results = train_esn(cfg, ws, Path(tmp) / "artifacts")
                 output({"ok": True, "test_metrics": results["scores"]["test"]})
             return 0
+        if args.cmd == "project":
+            if args.project_name != "ebrush":
+                raise ValueError("Unknown project")
+            if args.project_action == "import":
+                output(import_source(Workspace(), args.source))
+                return 0
+            if args.project_action == "sessions":
+                output({"project": PROJECT_ID, "sessions": list_sessions(Workspace())})
+                return 0
+            if args.project_action == "demo":
+                created = make_demo(Workspace())
+                if not args.train:
+                    output(created)
+                    return 0
+                client = ensure_server()
+                row = client.submit_ebrush({"dataset": {"session_ids": created["session_ids"]}})
+                return wait_run(client, row, 300)
+            if args.project_action == "train":
+                raw = json.loads(args.config.read_text(encoding="utf-8")) if args.config else {}
+                cfg = normalize_ebrush_config(raw)
+                client = ensure_server()
+                row = client.submit_ebrush(cfg)
+                if args.wait:
+                    return wait_run(client, row, args.timeout)
+                output(row)
+                return 0
+            if args.project_action == "runs":
+                client = ensure_server()
+                output({"project": PROJECT_ID, "runs": [r for r in client.runs(200)
+                        if r["config"].get("project") == PROJECT_ID]})
+                return 0
         if args.cmd == "import-csv":
             output(Workspace().import_csv(args.file))
             return 0
@@ -100,6 +160,8 @@ def main(argv=None):
             row = ws.get_run(args.run_id)
             if not row or row["status"] != "finished":
                 raise ValueError("Run must exist and be finished")
+            if row["config"].get("project") == PROJECT_ID:
+                raise ValueError("EBrush multi-input models cannot use generic CSV predict; use saved run traces")
             data, col = ws.read_csv_series(args.dataset_id, args.column)
             preds = predict_with_model(
                 ws.artifact_dir(args.run_id) / "model.npz", data
@@ -139,16 +201,7 @@ def main(argv=None):
             if not args.wait:
                 output(row)
             else:
-                deadline = time.monotonic() + args.timeout
-                while time.monotonic() < deadline:
-                    row = client.run(row["id"])
-                    if row["status"] not in ("queued", "running"):
-                        output(row)
-                        return 0 if row["status"] == "finished" else 1
-                    time.sleep(0.4)
-                output({"id": row["id"], "status": "timeout",
-                        "message": "Job continues in background; use stop to cancel"})
-                return 2
+                return wait_run(client, row, args.timeout)
         else:
             raise RuntimeError("Unknown command")
         return 0

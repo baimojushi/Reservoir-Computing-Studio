@@ -1,0 +1,13 @@
+{
+  "release": "RCStudio-v0.4.1-Copyedit",
+  "source_package": "RCStudio-v0.4-Learning.zip",
+  "help_topics": 39,
+  "help_entries_revised": 39,
+  "courses": 5,
+  "steps": 37,
+  "help_strings_verified_in_manual_and_html": 351,
+  "targeted_negative_contrast_patterns_remaining": 0,
+  "tests": "83 passed, 1 skipped, 6 subtests passed in 1.34s",
+  "native_gui_acceptance": "Pending on Windows with PySide6; GUI test is skipped locally",
+  "scope": "Copy editing, synchronized manuals, style-regression tests; core responsibilities unchanged"
+}

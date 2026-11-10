@@ -14,7 +14,7 @@ class ServiceError(RuntimeError):
     pass
 
 def current_port():
-    return int(os.environ.get("RCSTUDIO_PORT", "8765"))
+    return int(os.environ.get("RCSTUDIO_PORT", "8766"))
 
 class Client:
     def __init__(self, port=None, permission="write", workspace=None):
@@ -62,6 +62,12 @@ class Client:
     def datasets(self):
         return self.request("GET", "/v1/datasets")["datasets"]
 
+    def projects(self):
+        return self.request("GET", "/v1/projects")["projects"]
+
+    def ebrush_sessions(self):
+        return self.request("GET", "/v1/projects/ebrush/sessions")["sessions"]
+
     def run(self, run_id):
         return self.request("GET", f"/v1/runs/{run_id}")
 
@@ -77,6 +83,10 @@ class Client:
     def submit(self, config):
         return self.request("POST", "/v1/runs", {"config": config}, timeout=10)
 
+    def submit_ebrush(self, config=None):
+        return self.request("POST", "/v1/projects/ebrush/train",
+                            {"config": config or {}} , timeout=10)
+
     def stop(self, run_id):
         return self.request("POST", f"/v1/runs/{run_id}/stop", {})
 
@@ -86,11 +96,13 @@ def ensure_server(port=None, workspace=None):
     try:
         status = client.health()
         if status.get("app") == "RCStudio":
+            if "ebrush_motion_v1" not in status.get("projects", []):
+                raise ServiceError("Port occupied by an older RC Studio service; stop that service before starting V0.3")
             client.workspace_state()  # Also confirm our token matches.
             return client
         raise ServiceError("Port occupied by an unexpected HTTP server")
     except ServiceError as exc:
-        if "unexpected" in str(exc) or "401" in str(exc):
+        if "unexpected" in str(exc) or "older RC Studio" in str(exc) or "401" in str(exc):
             raise
     kwargs = {
         "stdin": subprocess.DEVNULL,
@@ -111,7 +123,8 @@ def ensure_server(port=None, workspace=None):
     )
     for _ in range(60):
         try:
-            if client.health().get("app") == "RCStudio":
+            health = client.health()
+            if health.get("app") == "RCStudio" and "ebrush_motion_v1" in health.get("projects", []):
                 client.workspace_state()
                 return client
         except ServiceError:

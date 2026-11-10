@@ -1,0 +1,198 @@
+{
+  "scope": "Owned control constructor sites; inherited native children and custom canvas bindings use integration.py",
+  "kind": "static-source-audit-not-native-visual-acceptance",
+  "catalog_entries": 39,
+  "courses": 5,
+  "course_steps": 37,
+  "owned_control_constructor_sites": 28,
+  "missing": [],
+  "bindings": [
+    {
+      "file": "rcstudio/gui.py",
+      "line": 227,
+      "target": "QPushButton('深色模式')",
+      "topic_expression": "'ui.theme'"
+    },
+    {
+      "file": "rcstudio/gui.py",
+      "line": 230,
+      "target": "QPushButton('帮助 · 新手入门')",
+      "topic_expression": "'ui.help'"
+    },
+    {
+      "file": "rcstudio/gui.py",
+      "line": 246,
+      "target": "QGroupBox('研究项目')",
+      "topic_expression": "'rc.project'"
+    },
+    {
+      "file": "rcstudio/gui.py",
+      "line": 248,
+      "target": "QComboBox()",
+      "topic_expression": "'rc.project'"
+    },
+    {
+      "file": "rcstudio/gui.py",
+      "line": 262,
+      "target": "QGroupBox('模型拓扑 · ESN')",
+      "topic_expression": "'rc.topology'"
+    },
+    {
+      "file": "rcstudio/gui.py",
+      "line": 268,
+      "target": "QGroupBox('模型参数')",
+      "topic_expression": "'rc.parameters'"
+    },
+    {
+      "file": "rcstudio/gui.py",
+      "line": 298,
+      "target": "QPushButton('▶  启动训练')",
+      "topic_expression": "'rc.run'"
+    },
+    {
+      "file": "rcstudio/gui.py",
+      "line": 302,
+      "target": "QPushButton('■  停止')",
+      "topic_expression": "'rc.stop'"
+    },
+    {
+      "file": "rcstudio/gui.py",
+      "line": 307,
+      "target": "QPushButton('载入所选实验参数')",
+      "topic_expression": "'rc.load'"
+    },
+    {
+      "file": "rcstudio/gui.py",
+      "line": 333,
+      "target": "QProgressBar()",
+      "topic_expression": "'rc.progress'"
+    },
+    {
+      "file": "rcstudio/gui.py",
+      "line": 341,
+      "target": "QTabWidget()",
+      "topic_expression": "'ui.tabs'"
+    },
+    {
+      "file": "rcstudio/gui.py",
+      "line": 342,
+      "target": "pg.PlotWidget()",
+      "topic_expression": "'rc.plot'"
+    },
+    {
+      "file": "rcstudio/gui.py",
+      "line": 347,
+      "target": "pg.ImageView(view=pg.PlotItem())",
+      "topic_expression": "'rc.states'"
+    },
+    {
+      "file": "rcstudio/gui.py",
+      "line": 349,
+      "target": "QTextEdit()",
+      "topic_expression": "'rc.diagnostics'"
+    },
+    {
+      "file": "rcstudio/gui.py",
+      "line": 363,
+      "target": "QPushButton('↻ 刷新')",
+      "topic_expression": "'rc.refresh'"
+    },
+    {
+      "file": "rcstudio/gui.py",
+      "line": 367,
+      "target": "QTableWidget(0, 6)",
+      "topic_expression": "'rc.history'"
+    },
+    {
+      "file": "rcstudio/gui.py",
+      "line": 388,
+      "target": "QGroupBox('数据来源 · 通用 ESN')",
+      "topic_expression": "'rc.dataset'"
+    },
+    {
+      "file": "rcstudio/gui.py",
+      "line": 390,
+      "target": "QComboBox()",
+      "topic_expression": "'rc.dataset'"
+    },
+    {
+      "file": "rcstudio/gui.py",
+      "line": 394,
+      "target": "QSpinBox()",
+      "topic_expression": "'rc.length'"
+    },
+    {
+      "file": "rcstudio/gui.py",
+      "line": 399,
+      "target": "QComboBox()",
+      "topic_expression": "'rc.column'"
+    },
+    {
+      "file": "rcstudio/gui.py",
+      "line": 403,
+      "target": "QPushButton('＋ 导入 CSV 数据集')",
+      "topic_expression": "'rc.import_csv'"
+    },
+    {
+      "file": "rcstudio/gui.py",
+      "line": 410,
+      "target": "QGroupBox('E-Brush 数据 · 离线研究')",
+      "topic_expression": "'rc.ebrush'"
+    },
+    {
+      "file": "rcstudio/gui.py",
+      "line": 420,
+      "target": "QPushButton('＋ 导入采集文件')",
+      "topic_expression": "'rc.ebrush_import'"
+    },
+    {
+      "file": "rcstudio/gui.py",
+      "line": 423,
+      "target": "QPushButton('生成模拟样本')",
+      "topic_expression": "'rc.demo'"
+    },
+    {
+      "file": "rcstudio/gui.py",
+      "line": 429,
+      "target": "QTableWidget(0, 3)",
+      "topic_expression": "'rc.sessions'"
+    },
+    {
+      "file": "rcstudio/gui.py",
+      "line": 437,
+      "target": "QPushButton('刷新采集会话')",
+      "topic_expression": "'rc.sessions_refresh'"
+    },
+    {
+      "file": "rcstudio/gui.py",
+      "line": 327,
+      "target": "card",
+      "topic_expression": "topic"
+    },
+    {
+      "file": "rcstudio/gui.py",
+      "line": 328,
+      "target": "label",
+      "topic_expression": "topic"
+    },
+    {
+      "file": "rcstudio/gui.py",
+      "line": 284,
+      "target": "QDoubleSpinBox()",
+      "topic_expression": "'rc.model.' + key"
+    },
+    {
+      "file": "rcstudio/gui.py",
+      "line": 284,
+      "target": "QSpinBox()",
+      "topic_expression": "'rc.model.' + key"
+    }
+  ],
+  "notes": [
+    "Loop constructor sites expand to multiple runtime controls.",
+    "Form labels, metric cards and custom canvases are additionally bound in integration.py.",
+    "Concept-only topics and optional-entry topics need not have a visible widget in the main window.",
+    "OS file dialogs and third-party internal menus retain their native behavior.",
+    "Run LearningManager.coverage() and target-machine GUI acceptance for native runtime verification."
+  ]
+}

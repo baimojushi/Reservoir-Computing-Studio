@@ -12,6 +12,7 @@ from . import __version__
 from .config import ConfigurationError, normalize_config
 from .core import ExperimentCancelled, sample_traces, train_esn
 from .storage import Workspace
+from .ebrush import PROJECT_ID, normalize_ebrush_config, list_sessions, preflight_training, train_motion
 
 class RCService:
     def __init__(self, workspace=None):
@@ -29,11 +30,20 @@ class RCService:
             "workspace": str(self.workspace.root),
             "runs": runs,
             "datasets": self.workspace.list_datasets(),
+            "projects": [{"id": "generic_esn", "name": "Generic ESN"},
+                         {"id": PROJECT_ID, "name": "EBrush Motion Predictor V1",
+                          "session_count": len(list_sessions(self.workspace))}],
         }
 
     def submit(self, raw_config):
-        cfg = normalize_config(raw_config)
-        if cfg["dataset"]["kind"] == "csv":
+        if not isinstance(raw_config, dict):
+            raise ConfigurationError("config: expected an object")
+        is_ebrush = raw_config.get("project") == PROJECT_ID
+        cfg = (normalize_ebrush_config(raw_config) if is_ebrush
+               else normalize_config(raw_config))
+        if is_ebrush:
+            preflight_training(cfg, self.workspace)
+        if not is_ebrush and cfg["dataset"]["kind"] == "csv":
             # Fail fast on unknown dataset/invalid CSV.
             self.workspace.read_csv_series(
                 cfg["dataset"]["dataset_id"], cfg["dataset"]["column"]
@@ -57,7 +67,8 @@ class RCService:
                 if percent > last_percent:
                     last_percent = percent
                     self.workspace.update_run(run_id, progress=value)
-            summary = train_esn(
+            trainer = train_motion if cfg.get("project") == PROJECT_ID else train_esn
+            summary = trainer(
                 cfg, self.workspace, self.workspace.artifact_dir(run_id),
                 cancel=stop, progress=report,
             )
@@ -73,9 +84,10 @@ class RCService:
                 run_id, status="failed",
                 error=f"{type(exc).__name__}: {exc}"
             )
-            (self.workspace.root / "service_errors.log").open(
+            with (self.workspace.root / "service_errors.log").open(
                 "a", encoding="utf-8"
-            ).write(f"{run_id}\n{traceback.format_exc()}\n")
+            ) as log:
+                log.write(f"{run_id}\n{traceback.format_exc()}\n")
         finally:
             with self.lock:
                 self.jobs.pop(run_id, None)
@@ -93,7 +105,7 @@ class RCService:
         return {"id": run_id, "stop_requested": event is not None}
 
 class RCHandler(BaseHTTPRequestHandler):
-    server_version = "RCStudio/0.1"
+    server_version = "RCStudio/0.3"
     def log_message(self, fmt, *args):
         # Do not leak bearer tokens or request data in HTTP logs.
         return
@@ -123,7 +135,8 @@ class RCHandler(BaseHTTPRequestHandler):
             svc = self.server.rcservice
             if self.command == "GET" and parts == ["v1", "health"]:
                 return self._json(200, {
-                    "app": "RCStudio", "version": __version__, "pid": os.getpid()
+                    "app": "RCStudio", "version": __version__, "pid": os.getpid(),
+                    "port_role": "rc_training_only", "projects": ["generic_esn", PROJECT_ID]
                 })
             auth = self.headers.get("Authorization", "")
             provided = auth[7:] if auth.startswith("Bearer ") else ""
@@ -141,6 +154,10 @@ class RCHandler(BaseHTTPRequestHandler):
                     return self._json(200, svc.workspace_state())
                 if parts == ["v1", "datasets"]:
                     return self._json(200, {"datasets": svc.workspace.list_datasets()})
+                if parts == ["v1", "projects"]:
+                    return self._json(200, {"projects": svc.workspace_state()["projects"]})
+                if parts == ["v1", "projects", "ebrush", "sessions"]:
+                    return self._json(200, {"sessions": list_sessions(svc.workspace)})
                 if parts == ["v1", "runs"]:
                     limit = int(query.get("limit", ["30"])[0])
                     return self._json(200, {"runs": svc.workspace.list_runs(limit)})
@@ -178,6 +195,12 @@ class RCHandler(BaseHTTPRequestHandler):
                     return self._json(400, {"error": "Expected JSON object"})
                 if parts == ["v1", "runs"]:
                     return self._json(202, svc.submit(body.get("config", {})))
+                if parts == ["v1", "projects", "ebrush", "train"]:
+                    raw = body.get("config", {})
+                    if not isinstance(raw, dict):
+                        raise ConfigurationError("config must be an object")
+                    raw = {**raw, "project": PROJECT_ID}
+                    return self._json(202, svc.submit(raw))
                 if len(parts) == 4 and parts[:2] == ["v1", "runs"] \
                         and parts[3] == "stop":
                     return self._json(200, svc.stop(parts[2]))
@@ -197,9 +220,11 @@ class RCHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         self._serve()
 
-def run_server(port=8765, workspace=None):
+def run_server(port=8766, workspace=None):
     if not (1024 <= int(port) <= 65535):
         raise ValueError("Port must be 1024..65535")
+    if int(port) == 8765:
+        raise ValueError("Port 8765 is reserved for E-Brush Studio; use 8766")
     service = RCService(workspace=workspace)
     httpd = ThreadingHTTPServer(("127.0.0.1", int(port)), RCHandler)
     httpd.rcservice = service

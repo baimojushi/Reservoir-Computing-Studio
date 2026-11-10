@@ -1,0 +1,16 @@
+{
+  "project": "ebrush_motion_v1",
+  "dataset": {"kind": "ebrush_sessions", "session_ids": []},
+  "model": {
+    "units": 96,
+    "spectral_radius": 0.9,
+    "leak_rate": 0.35,
+    "density": 0.08,
+    "input_scaling": 0.7,
+    "ridge": 0.00001,
+    "seed": 42,
+    "washout": 40,
+    "horizon": 10
+  },
+  "split": {"train": 0.67, "validation": 0.17}
+}

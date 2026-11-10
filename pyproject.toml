@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rcstudio-local"
-version = "0.1.0"
+version = "0.4.0"
 description = "Local Reservoir Computing Studio with CLI, GUI, HTTP and MCP"
 readme = "README_CN.md"
 requires-python = ">=3.11"
@@ -28,3 +28,6 @@ include = ["rcstudio*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.setuptools.package-data]
+"rcstudio.learning_support" = ["*.json"]

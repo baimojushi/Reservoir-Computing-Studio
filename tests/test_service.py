@@ -9,6 +9,8 @@ from pathlib import Path
 from rcstudio.client import Client, ServiceError
 from rcstudio.service import RCHandler, RCService
 from rcstudio.storage import Workspace
+from rcstudio.ebrush import make_demo, PROJECT_ID
+from rcstudio.service import run_server
 
 class TestService(unittest.TestCase):
     @classmethod
@@ -52,6 +54,35 @@ class TestService(unittest.TestCase):
         self.assertGreaterEqual(len(readonly.runs()), 1)
         with self.assertRaises(ServiceError):
             readonly.submit(config)
+
+    def test_reserved_device_port_refused(self):
+        with self.assertRaisesRegex(ValueError, "reserved for E-Brush"):
+            run_server(port=8765, workspace=self.workspace)
+
+    def test_ebrush_endpoints_readonly_and_submission(self):
+        created = make_demo(self.workspace, count=3, length=220)
+        client = Client(port=self.httpd.server_port, workspace=self.workspace)
+        readonly = Client(port=self.httpd.server_port, workspace=self.workspace,
+                          permission="read")
+        self.assertIn(PROJECT_ID, client.health()["projects"])
+        self.assertTrue(any(item["id"] == PROJECT_ID for item in readonly.projects()))
+        self.assertGreaterEqual(len(readonly.ebrush_sessions()), 3)
+        config = {"dataset": {"session_ids": created["session_ids"]},
+                  "model": {"units": 18, "washout": 20}}
+        with self.assertRaises(ServiceError):
+            readonly.submit_ebrush(config)
+        with self.assertRaisesRegex(ServiceError, "independent capture files"):
+            client.submit_ebrush({"dataset": {"session_ids": [created["session_ids"][0]]}})
+        row = client.submit_ebrush(config)
+        for _ in range(150):
+            row = client.run(row["id"])
+            if row["status"] not in ("running", "queued"):
+                break
+            time.sleep(.03)
+        self.assertEqual(row["status"], "finished", row.get("error"))
+        self.assertEqual(row["metrics"]["project"], PROJECT_ID)
+        self.assertEqual(row["metrics"]["nominal_horizon_ms"], 50)
+        self.assertEqual(len(client.traces(row["id"], limit=51)["timestep"]), 51)
 
 if __name__ == "__main__":
     unittest.main()
