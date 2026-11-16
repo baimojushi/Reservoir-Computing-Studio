@@ -466,8 +466,8 @@ class LessonCoach(QtWidgets.QDialog):
         row.addWidget(self.next_button)
         outer_layout.addLayout(row)
         bottom = QtWidgets.QHBoxLayout()
-        skip = _tip(QtWidgets.QPushButton("跳过（记为未完成）"),
-                    "设备或数据不足时跳过；记录保留为未完成，不表示通过标定或实验。")
+        skip = _tip(QtWidgets.QPushButton("先探索下一步"),
+                    "自由探索入口：当前步骤会记为未完成；你可以继续操作软件，之后再回来补齐，不会代替任何设备或训练操作。")
         skip.clicked.connect(lambda: manager.lesson_next(skip=True))
         pause = _tip(QtWidgets.QPushButton("暂停教学"), "保存学习位置。注意：不会暂停正在采集的数据或训练任务。")
         pause.clicked.connect(manager.pause_course)
@@ -554,7 +554,10 @@ class LessonCoach(QtWidgets.QDialog):
         if not session:
             return
         self.next_button.setEnabled(session.ready)
-        self.feedback.setText(session.feedback or session.step.get("check", "完成检查后可继续。"))
+        message = session.feedback or session.step.get("check", "完成检查后可继续。")
+        if not session.ready:
+            message += "  也可以先探索下一步；本步会保留为未完成。"
+        self.feedback.setText(message)
 
     def locate(self):
         if self.manager.session:

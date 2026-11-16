@@ -1,0 +1,20 @@
+RC Studio V0.7.1 automated validation
+
+Test files: tests/*.py learning_tests/*.py
+Result: 148 passed, 1 skipped, 0 failed (local stand-in runner; pytest is not installed in this environment)
+  python -m unittest tests.test_fidelity_v071 tests.test_lab_web -> OK
+
+Review items reproduced before fixing, then re-measured (see docs/V071_RELEASE_CN.md):
+  input standardisation   u(0): raw 0.906786, model -0.104333, V0.7.0 page +0.078115; 69/1200 frames sign-flipped -> 0
+  echo window             48 units / 0.90 / 0.10: undecided at 96 steps, 110 steps at 160 -> page shows 110; old payloads "window too short"
+  readout pieces          sum equals page prediction within 1e-9; rebuilds saved prediction within 1.5e-3
+
+Other checks:
+  python scripts/check_lab_page.py           -> 0 problems (Chromium 153; desktop light, desktop dark embedded, 360x640)
+  python scripts/sync_help_docs.py --check   -> in sync
+  python -m rcstudio.learning_support.audit  -> 0 missing help bindings
+  python -m rcstudio check / --version       -> ok / 0.7.1
+  main's own tests on the new code           -> 87 passed, 1 skipped, 2 failed (copy-style rule replaced in V0.6)
+  parent project probe (studio/rcstudio_bridge.py) against the 0.7.1 service -> verified True
+
+Qt glue was executed against stub modules only. Native Windows acceptance is pending.

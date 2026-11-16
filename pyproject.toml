@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rcstudio-local"
-version = "0.4.0"
-description = "Local Reservoir Computing Studio with CLI, GUI, HTTP and MCP"
+version = "0.7.2"
+description = "Intuitive Reservoir Laboratory (web lab + native fallback) with ESN sandbox, CLI, GUI, HTTP and MCP"
 readme = "README_CN.md"
 requires-python = ">=3.11"
 license = {file = "LICENSE"}
@@ -27,7 +27,8 @@ rcstudio = "rcstudio.cli:main"
 include = ["rcstudio*"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "learning_tests"]
 
 [tool.setuptools.package-data]
 "rcstudio.learning_support" = ["*.json"]
+"rcstudio.lab_web" = ["*.html"]

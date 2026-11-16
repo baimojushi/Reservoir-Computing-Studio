@@ -77,6 +77,18 @@ class Client:
             timeout=10,
         )
 
+    def reservoir(self, run_id, edges=1200):
+        """Echo layers, strongest synapses, readout weights and impulse response."""
+        return self.request(
+            "GET", f"/v1/runs/{run_id}/reservoir?edges={int(edges)}", timeout=20)
+
+    def reservoir_frames(self, run_id, start=0, count=360, stride=1):
+        """Contiguous full-width reservoir states (one animation window)."""
+        return self.request(
+            "GET",
+            f"/v1/runs/{run_id}/reservoir/frames?start={int(start)}"
+            f"&count={int(count)}&stride={int(stride)}", timeout=20)
+
     def diagnostics(self):
         return self.request("GET", "/v1/diagnostics")
 
@@ -97,7 +109,7 @@ def ensure_server(port=None, workspace=None):
         status = client.health()
         if status.get("app") == "RCStudio":
             if "ebrush_motion_v1" not in status.get("projects", []):
-                raise ServiceError("Port occupied by an older RC Studio service; stop that service before starting V0.3")
+                raise ServiceError("Port occupied by an older RC Studio service; stop that service before starting this version")
             client.workspace_state()  # Also confirm our token matches.
             return client
         raise ServiceError("Port occupied by an unexpected HTTP server")

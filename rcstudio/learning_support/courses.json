@@ -2,6 +2,93 @@
   "version": 1,
   "courses": [
     {
+      "id": "rc_lab",
+      "title": "00 · 在直觉实验室里认识 ESN",
+      "description": "把你在直觉实验室里做过的事串起来讲一遍：回声、随机连线、只训练读出、三个旋钮。做过的步骤自动通过，不需要重做。",
+      "prerequisites": "不需要硬件，也不需要先训练实验。Web 与原生实验室均可完成本课的四项观察。",
+      "steps": [
+        {
+          "id": "poke",
+          "title": "回声：敲一下之后发生了什么",
+          "help": "rc.echo",
+          "target": "rc.echo",
+          "instruction": "在直觉实验室第 1 步敲一下。输入只持续几步，池子却要更久才平息，这段余波就是回声。如果你已经敲过，这一步会直接通过，并引用你那一次的结果。",
+          "gate": "predicate",
+          "check": "实验室记录了一次敲击及其余波。",
+          "predicate": "rc.lab.poke"
+        },
+        {
+          "id": "nodes",
+          "title": "同一个输入，许多种反应",
+          "help": "rc.echo.layers",
+          "target": "rc.echo",
+          "instruction": "在第 2 步点一个节点，看它自己的曲线和连线。连线是随机生成的，训练时不改。",
+          "gate": "predicate",
+          "check": "实验室记录了你查看过的节点。",
+          "predicate": "rc.lab.nodes"
+        },
+        {
+          "id": "readout",
+          "title": "读出：唯一被训练的部分",
+          "help": "rc.echo",
+          "target": "rc.echo",
+          "instruction": "Web 实验室第 3 步点“训练读出”；原生实验室点“查看训练读出”。示范网络的固定连接不变，两者都能观察读出贡献。",
+          "gate": "predicate",
+          "check": "实验室记录了一次读出训练及其误差。",
+          "predicate": "rc.lab.readout"
+        },
+        {
+          "id": "trained",
+          "title": "训练改动了什么？",
+          "help": "rc.echo",
+          "target": "rc.echo",
+          "instruction": "点了“训练读出”之后，模型里哪些数发生了变化？",
+          "gate": "quiz",
+          "check": "选出最符合说明的答案。",
+          "answers": [
+            "只有读出的那组权重；池子里的连线没有变。",
+            "池子里的全部连线都被重新训练了。"
+          ],
+          "correct": 0,
+          "feedback": "ESN 只求解读出权重，储备池内部的随机连线保持固定。"
+        },
+        {
+          "id": "knobs",
+          "title": "三个旋钮各管什么",
+          "help": "rc.model.spectral_radius",
+          "target": "rc.echo",
+          "instruction": "在实验室拖动任意一个旋钮，观察重新计算的状态响应。Web 模式还会展示改动前的余波虚线。旋钮只作用于示范网络。",
+          "gate": "predicate",
+          "check": "实验室记录了你调过的旋钮和调后的余波。",
+          "predicate": "rc.lab.knobs"
+        },
+        {
+          "id": "window",
+          "title": "看了一段时间还没平息，该怎么说？",
+          "help": "rc.echo",
+          "target": "rc.echo",
+          "instruction": "观察窗口结束时，余波还在变小，但没有降到阈值以下。哪种说法站得住？",
+          "gate": "quiz",
+          "check": "选出最符合说明的答案。",
+          "answers": [
+            "窗口不够长，暂时不能判定它何时平息。",
+            "这个模型一定不稳定，会永远振荡下去。"
+          ],
+          "correct": 0,
+          "feedback": "有限时间的观察只能支持“已经看到衰减”；没看到时，要先区分是窗口不足还是窗口内确实没有衰减。它也不能单独证明回声状态性质。"
+        },
+        {
+          "id": "next",
+          "title": "接下来：训练一条自己的实验",
+          "help": "ui.mode",
+          "target": "ui.mode",
+          "instruction": "点顶栏“研究工作台”，然后开始课程 01。训练完成后在实验表里点那条实验，它会出现在实验室的“我的实验”里，用同一种图回放真实状态。",
+          "gate": "read",
+          "check": "勾选阅读确认后继续。"
+        }
+      ]
+    },
+    {
       "id": "rc_first",
       "title": "01 · 第一条合成信号实验",
       "description": "从无硬件的 Sine 实验学习一次完整训练与结果判断。",

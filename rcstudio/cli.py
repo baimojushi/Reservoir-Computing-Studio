@@ -29,6 +29,7 @@ def parser():
     serve = sub.add_parser("serve", help="Run a loopback HTTP service in foreground")
     serve.add_argument("--port", type=int, default=current_port())
     sub.add_parser("gui", help="Open PySide6 desktop workbench (auto-start service)")
+    sub.add_parser("lab", help="Open the intuitive ESN lab in your browser (needs no GUI packages)")
     sub.add_parser("status", help="Read workspace state as JSON")
     sub.add_parser("datasets", help="List imported CSV datasets")
     import_cmd = sub.add_parser("import-csv", help="Import a local CSV into managed storage")
@@ -102,6 +103,12 @@ def main(argv=None):
                 output({"saved_to": str(args.output.resolve())})
             else:
                 print(cfg)
+            return 0
+        if args.cmd == "lab":
+            import webbrowser
+            from .lab_web import page_path
+            url = page_path().as_uri()
+            output({"opened": bool(webbrowser.open(url)), "url": url})
             return 0
         if args.cmd == "check":
             with tempfile.TemporaryDirectory(prefix="rcstudio-check-") as tmp:

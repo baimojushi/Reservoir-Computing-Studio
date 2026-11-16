@@ -1,0 +1,1442 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>储备池实验室</title>
+<style>
+:root{
+  color-scheme: light;
+  --paper:#ECEFEC; --surface:#F8F9F7; --ink:#17202A; --ink2:#4E5A66; --ink3:#87919A; --rule:#D0D6D3;
+  --pond0:#182433; --pond1:#0A1017; --pond-rim:#33465A; --pond-ink:#DDE7EF; --pond-dim:#34455A;
+  --pos:#1D61AE; --neg:#C5371E; --in:#9A6700; --out:#0E7A5E;
+  --pos-g:#73BBFF; --neg-g:#FF7654; --in-g:#FFC84A; --out-g:#45D9AC;
+  --btn:#17202A; --btn-ink:#F8F9F7; --focus:#1D61AE;
+  --serif:"Noto Serif CJK SC","Source Han Serif SC","Songti SC","STSong","SimSun",serif;
+  --sans:"Microsoft YaHei UI","PingFang SC","Noto Sans CJK SC","Hiragino Sans GB","Segoe UI",system-ui,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --paper:#0D1216; --surface:#151C22; --ink:#E8EDF0; --ink2:#A7B2BC; --ink3:#6E7B86; --rule:#26313A;
+    --pond0:#131D29; --pond1:#06090D; --pond-rim:#3A4E64;
+    --pos:#73BBFF; --neg:#FF7654; --in:#FFC84A; --out:#45D9AC;
+    --btn:#E8EDF0; --btn-ink:#0D1216; --focus:#73BBFF;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --paper:#0D1216; --surface:#151C22; --ink:#E8EDF0; --ink2:#A7B2BC; --ink3:#6E7B86; --rule:#26313A;
+  --pond0:#131D29; --pond1:#06090D; --pond-rim:#3A4E64;
+  --pos:#73BBFF; --neg:#FF7654; --in:#FFC84A; --out:#45D9AC;
+  --btn:#E8EDF0; --btn-ink:#0D1216; --focus:#73BBFF;
+}
+*,*::before,*::after{box-sizing:inherit}
+[hidden]{display:none !important}
+html{height:100%; scroll-padding-top:env(safe-area-inset-top,0px)}
+body{height:100%; margin:0; background:var(--paper); color:var(--ink); font:14px/1.7 var(--sans);
+  -webkit-font-smoothing:antialiased; overflow:hidden}
+button,input{font:inherit; color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--focus); outline-offset:2px; border-radius:4px}
+
+.app{height:100%; display:grid; grid-template-rows:auto minmax(0,1fr)}
+
+/* chapter rail: a real sequence, so it is numbered */
+.rail{display:flex; align-items:stretch; gap:2px; padding:0 14px 0 18px; border-bottom:1px solid var(--rule); min-height:46px}
+.chap{display:flex; align-items:center; gap:8px; padding:0 14px 0 10px; border:0; background:none; color:var(--ink3);
+  position:relative; white-space:nowrap; font-size:13.5px}
+.chap .num{width:20px; height:20px; border-radius:50%; border:1.5px solid currentColor; display:grid; place-items:center;
+  font-size:11px; font-weight:600; font-variant-numeric:tabular-nums; line-height:1}
+.chap.done .num{background:var(--ink3); border-color:var(--ink3); color:var(--paper)}
+.chap[aria-current="step"]{color:var(--ink); font-weight:600}
+.chap[aria-current="step"] .num{background:var(--ink); border-color:var(--ink); color:var(--paper)}
+.chap[aria-current="step"]::after{content:""; position:absolute; left:10px; right:14px; bottom:-1px; height:2px; background:var(--ink)}
+.chap:hover{color:var(--ink)}
+.chap.run{margin-left:10px; padding-left:16px}
+.chap.run::before{content:""; position:absolute; left:0; top:13px; bottom:13px; width:1px; background:var(--rule)}
+.chap.run .num{border-radius:5px; width:auto; padding:0 5px; height:18px}
+.rail .gap{flex:1}
+.chap,.tool{flex:none; white-space:nowrap}
+.tool{align-self:center; border:1px solid var(--rule); background:none; border-radius:999px; padding:3px 12px; font-size:12.5px; color:var(--ink2); margin-left:6px}
+.tool[aria-pressed="true"]{background:var(--ink); border-color:var(--ink); color:var(--paper)}
+.tool.next{color:var(--ink); font-weight:600; padding:4px 14px; margin-right:10px}
+.tool.next.ready{background:var(--out); border-color:var(--out); color:#fff}
+
+.main{display:grid; grid-template-columns:minmax(300px,392px) minmax(0,1fr); min-height:0}
+.story{display:flex; flex-direction:column; min-height:0; padding:0; border-right:1px solid var(--rule)}
+.inst{display:grid; grid-template-rows:minmax(0,1fr) auto; min-width:0; min-height:0}
+.story .body{flex:1; min-height:0; overflow-y:auto; padding:20px 22px 8px 24px}
+.story h1{font:700 25px/1.3 var(--serif); margin:0 0 10px; letter-spacing:.01em}
+.story p{margin:0 0 10px; max-width:34em}
+.story .lead{color:var(--ink2)}
+.story strong{font-weight:650}
+.acts{display:flex; flex-wrap:wrap; gap:8px 10px; align-items:center; margin:12px 0 12px}
+.btn{border:1px solid var(--btn); background:var(--btn); color:var(--btn-ink); border-radius:8px; padding:7px 18px; font-weight:600; font-size:14px}
+.btn.ghost{background:none; color:var(--ink); border-color:var(--rule); font-weight:500; padding:6px 13px; font-size:13px}
+.btn:disabled{opacity:.45; cursor:default}
+.btn:active:not(:disabled){transform:translateY(1px)}
+.hint{color:var(--ink3); font-size:12.5px}
+.obs{border-top:1px solid var(--rule); padding-top:12px; margin-top:4px}
+.obs p:last-child{margin-bottom:4px}
+.obs.top{margin-bottom:10px}
+.obs .empty{color:var(--ink3)}
+.echo{display:grid; grid-template-columns:auto minmax(0,1fr); gap:16px; align-items:end; margin:0 0 10px}
+.echo #head:empty{display:none}
+.big{font-size:13px; color:var(--ink2); margin:0 !important; display:flex; flex-direction:column; gap:2px; line-height:1.3}
+.big .n{white-space:nowrap}
+.big b{font:700 34px/1.05 var(--sans); color:var(--ink); font-variant-numeric:tabular-nums; letter-spacing:-.01em}
+.big .was{font-size:12px; color:var(--ink3)}
+.big.wide{margin:0 0 8px !important}
+.mini{display:block; width:100%; height:64px}
+.sci{display:none; font-size:12.5px; line-height:1.65; color:var(--ink2); border-left:2px solid var(--rule); padding:2px 0 2px 12px; margin:12px 0 4px}
+.show-sci .sci{display:block}
+.sci code{font:inherit; font-variant-numeric:tabular-nums; color:var(--ink)}
+.nav{display:none}
+.nav .btn.next{margin-left:auto}
+.nav .btn.next.ready{background:var(--out); border-color:var(--out); color:#fff}
+:root[data-theme="dark"] .next.ready{color:#06231A !important}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .next.ready{color:#06231A !important}}
+
+.knob{margin:0 0 8px}
+.knob .row{display:flex; align-items:baseline; gap:8px}
+.knob .name{font-weight:600}
+.knob .tech{color:var(--ink3); font-size:12px}
+.knob .val{margin-left:auto; font-variant-numeric:tabular-nums; font-weight:600}
+.knob .slide{display:grid; grid-template-columns:4.6em minmax(0,1fr) 4.6em; align-items:center; gap:8px; color:var(--ink3); font-size:11.5px}
+.knob .slide span:last-child{text-align:right}
+input[type=range]{-webkit-appearance:none; appearance:none; width:100%; height:22px; background:none; margin:0; display:block}
+input[type=range]::-webkit-slider-runnable-track{height:4px; border-radius:2px; background:var(--rule)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:18px; height:18px; border-radius:50%; background:var(--ink); border:3px solid var(--paper); margin-top:-7px; box-shadow:0 0 0 1px var(--ink)}
+input[type=range]::-moz-range-track{height:4px; border-radius:2px; background:var(--rule)}
+input[type=range]::-moz-range-thumb{width:14px; height:14px; border-radius:50%; background:var(--ink); border:3px solid var(--paper); box-shadow:0 0 0 1px var(--ink)}
+.chips{display:flex; flex-wrap:wrap; gap:6px; margin:0 0 12px}
+.chips .lbl{color:var(--ink3); font-size:12.5px; align-self:center; margin-right:2px; min-width:3.2em}
+.chip{border:1px solid var(--rule); background:none; border-radius:999px; padding:2px 12px; font-size:13px; color:var(--ink2)}
+.chip[aria-pressed="true"]{background:var(--ink); border-color:var(--ink); color:var(--paper)}
+.facts{display:grid; grid-template-columns:auto 1fr; gap:2px 14px; margin:0 0 12px; font-size:13px}
+.facts dt{color:var(--ink3)} .facts dd{margin:0; font-variant-numeric:tabular-nums}
+
+.stage{position:relative; min-height:200px; min-width:0}
+#pond{position:absolute; inset:0; width:100%; height:100%; touch-action:manipulation}
+.legend{position:absolute; left:10px; bottom:8px; display:flex; gap:12px; font-size:12px; color:var(--ink3); pointer-events:none}
+.legend i{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; vertical-align:-1px}
+.nodechip{position:absolute; right:12px; bottom:8px; font-size:12.5px; color:var(--ink2); background:var(--surface); border:1px solid var(--rule);
+  border-radius:999px; padding:2px 6px 2px 12px; display:none; align-items:center; gap:8px; font-variant-numeric:tabular-nums}
+.nodechip.on{display:flex}
+.nodechip button{border:0; background:none; color:var(--ink3); font-size:15px; line-height:1; padding:2px 5px}
+#pond:focus-visible{outline-offset:-4px; border-radius:10px}
+.stage-act{display:none; position:absolute; right:12px; bottom:34px; box-shadow:0 2px 10px rgba(0,0,0,.25)}
+.sum{display:flex; flex-wrap:wrap; gap:1px 12px; font-size:12.5px; font-variant-numeric:tabular-nums; color:var(--ink2); margin:0 0 10px}
+.sum .s{white-space:nowrap}
+.sum .s i{display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:5px}
+.sum .eq{color:var(--ink); font-weight:600}
+.toast{position:absolute; left:50%; top:10px; transform:translateX(-50%); background:var(--ink); color:var(--paper); font-size:12.5px;
+  padding:4px 14px; border-radius:999px; display:none; max-width:92%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.toast.on{display:block}
+.tip{position:absolute; pointer-events:none; background:var(--ink); color:var(--paper); font-size:12px; padding:2px 8px; border-radius:5px;
+  transform:translate(-50%,-150%); white-space:nowrap; display:none; font-variant-numeric:tabular-nums}
+
+.time{border-top:1px solid var(--rule); padding:10px 16px 8px 14px}
+#tracks{display:block; width:100%; touch-action:none; border-radius:4px}
+.transport{display:flex; align-items:center; gap:12px; margin-top:6px; padding-left:52px; font-size:12.5px; color:var(--ink2); flex-wrap:wrap}
+.play{width:34px; height:34px; border-radius:50%; border:0; background:var(--ink); display:grid; place-items:center; padding:0; flex:none}
+.play svg{width:14px; height:14px; fill:var(--paper)}
+.clock{font-variant-numeric:tabular-nums; min-width:9.5em}
+.seg{display:flex; border:1px solid var(--rule); border-radius:999px; overflow:hidden}
+.seg button{border:0; background:none; padding:2px 11px; font-size:12.5px; color:var(--ink2); font-variant-numeric:tabular-nums}
+.seg button[aria-pressed="true"]{background:var(--ink); color:var(--paper)}
+.transport .keys{margin-left:auto; color:var(--ink3); white-space:nowrap}
+@media (max-width: 1080px){.transport .keys{display:none}}
+
+@media (max-width: 780px){
+  body{overflow:auto; height:auto}
+  .app{height:auto; display:block}
+  .rail{overflow-x:auto; padding:0 8px}
+  .chap{padding:0 10px 0 6px}
+  .main{display:flex; flex-direction:column}
+  .inst{display:block; order:-1}
+  .stage{height:min(86vw,360px)}
+  .stage-act:not([hidden]){display:block}
+  .story{border-right:0; border-top:1px solid var(--rule)}
+  .story .body{overflow:visible; padding:16px 18px 8px}
+  .nav{display:flex; gap:8px; align-items:center; padding:4px 18px 14px}
+  .rail .next{display:none}
+  .transport{padding-left:0}
+  .transport .keys{display:none}
+}
+@media (max-height: 620px) and (min-width: 781px){
+  .story .body{padding-top:14px}
+  .story h1{font-size:22px; margin-bottom:6px}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="rail" id="rail" role="navigation" aria-label="章节"></header>
+  <main class="main">
+    <section class="story" id="story" aria-live="polite"></section>
+    <div class="inst">
+    <section class="stage" id="stage">
+      <canvas id="pond" tabindex="0" role="application" aria-label="储备池。方向键在节点之间移动，Esc 取消选中。"></canvas>
+      <button type="button" class="btn stage-act" id="stageAct" hidden></button>
+      <div class="legend" id="legend"></div>
+      <div class="nodechip" id="nodechip"><span id="nodechipText" aria-live="polite"></span><button type="button" id="nodechipClose" aria-label="取消选中节点">×</button></div>
+      <div class="tip" id="tip"></div>
+      <div class="toast" id="toast" role="status"></div>
+    </section>
+    <section class="time">
+    <canvas id="tracks" tabindex="0" role="slider" aria-label="时间轴，左右方向键逐步移动，空格播放或暂停"></canvas>
+    <div class="transport">
+      <button class="play" id="play" type="button" aria-label="暂停"></button>
+      <span class="clock" id="clock"></span>
+      <div class="seg" id="speed" role="group" aria-label="播放速度"></div>
+      <div class="seg" id="segments" role="group" aria-label="实验数据段" hidden></div>
+      <span class="keys">← → 逐步　空格 播放/暂停</span>
+    </div>
+    </section>
+    </div>
+  </main>
+</div>
+<script>
+/*ENGINE-BEGIN*/
+/* RC Studio lab engine: pure numerics, no DOM. Same leaky-tanh update as rcstudio.core / intuitive_lab.run_states. */
+const RCEngine = (() => {
+  "use strict";
+  const PREROLL = 160;     // silent steps before t = 0 so the pool starts from where it rests
+  const PULSE_WIDTH = 3;   // a poke lasts three steps so it is visible on the input track
+  const PULSE_AMP = 1.0;
+
+  function makeNet(d) {
+    const n = d.n, inIdx = [], inW = [], outIdx = [];
+    for (let i = 0; i < n; i++) { inIdx.push([]); inW.push([]); outIdx.push([]); }
+    for (let k = 0; k < d.src.length; k++) {
+      inIdx[d.dst[k]].push(d.src[k]); inW[d.dst[k]].push(d.w[k]); outIdx[d.src[k]].push(d.dst[k]);
+    }
+    return { n, seed: d.seed, src: d.src, dst: d.dst, w: d.w, win: d.win, bias: d.bias, pos: d.pos,
+             inIdx, inW, outIdx };
+  }
+
+  /* x(t) = (1-a) x(t-1) + a tanh(rho W x(t-1) + gain W_in u(t) + b) */
+  function step(net, p, x, u, out) {
+    const n = net.n, a = p.leak, rho = p.rho, g = p.gain;
+    for (let i = 0; i < n; i++) {
+      let s = net.bias[i] + g * net.win[i] * u;
+      const idx = net.inIdx[i], w = net.inW[i];
+      for (let k = 0; k < idx.length; k++) s += rho * w[k] * x[idx[k]];
+      out[i] = (1 - a) * x[i] + a * Math.tanh(s);
+    }
+  }
+
+  function run(net, p, u, opts) {
+    const n = net.n, T = u.length, X = new Float64Array(T * n);
+    let x = new Float64Array(n), y = new Float64Array(n);
+    if (opts && opts.initial) x.set(opts.initial);
+    const pre = opts && opts.preroll != null ? opts.preroll : PREROLL;
+    for (let k = 0; k < pre; k++) { step(net, p, x, 0, y); const t = x; x = y; y = t; }
+    for (let t = 0; t < T; t++) {
+      step(net, p, x, u[t], y);
+      X.set(y, t * n);
+      const tmp = x; x = y; y = tmp;
+    }
+    return X;
+  }
+
+  function signal(kind, T, drawn) {
+    const u = new Float64Array(T);
+    for (let t = 0; t < T; t++) {
+      const ph = t / (T - 1);
+      if (kind === "wave") u[t] = 0.58 * Math.sin(2 * Math.PI * ph * 4.2) + 0.22 * Math.sin(2 * Math.PI * ph * 11.3 + 0.55);
+      else if (kind === "chirp") u[t] = 0.7 * Math.sin(2 * Math.PI * (1.6 * ph + 5.2 * ph * ph));
+      else if (kind === "step") u[t] = [-0.5, 0.45, 0, 0.7, -0.3][Math.floor(t / 26) % 5];
+      else if (kind === "draw" && drawn && drawn.length === T) u[t] = drawn[t];
+      else u[t] = 0;
+    }
+    return u;
+  }
+
+  function withPokes(base, pokes) {
+    const u = Float64Array.from(base);
+    for (const t0 of pokes) for (let k = 0; k < PULSE_WIDTH; k++) {
+      const t = t0 + k; if (t >= 0 && t < u.length) u[t] = Math.max(-1, Math.min(1, u[t] + PULSE_AMP));
+    }
+    return u;
+  }
+
+  /* What a finite observation of an echo curve does and does not show (mirrors core.classify_echo).
+     decayed: fell below threshold x peak and stayed there for a margin of the window;
+     window_too_short: still above the threshold at the end, but shrinking;
+     no_decay_seen: still above the threshold and not shrinking within this window. */
+  function classifyEcho(d, t0, threshold) {
+    threshold = threshold == null ? 0.05 : threshold;
+    const window = d.length - t0;
+    let peak = 0;
+    for (let k = t0; k < d.length; k++) if (d[k] > peak) peak = d[k];
+    const out = { status: "silent", length: 0, window, threshold, peak, trend: null };
+    if (window < 8 || peak < 1e-12) return out;
+    let last = -1;
+    for (let k = d.length - 1; k >= t0; k--) if (d[k] > threshold * peak) { last = k - t0; break; }
+    if (last < window - Math.max(3, Math.floor(window / 20))) { out.status = "decayed"; out.length = last + 1; return out; }
+    const q = Math.max(2, Math.floor(window / 4));
+    let early = 0, late = 0;
+    for (let k = 0; k < q; k++) { late += d[d.length - 1 - k]; early += d[d.length - 1 - q - k]; }
+    out.trend = early > 1e-15 ? late / early : 1;
+    out.status = out.trend < 0.8 ? "window_too_short" : "no_decay_seen";
+    out.length = null;
+    return out;
+  }
+  function describeEcho(d, t0) {
+    const c = classifyEcho(d, t0);
+    return { d, peak: c.peak, t0, status: c.status, window: c.window, trend: c.trend,
+             len: c.length == null ? c.window : c.length, settled: c.status === "decayed" || c.status === "silent" };
+  }
+
+  /* Echo of one poke: RMS state difference between the run with and without it. */
+  function echo(XA, XB, T, n, t0) {
+    const d = new Float64Array(T);
+    for (let t = 0; t < T; t++) {
+      let s = 0;
+      for (let i = 0; i < n; i++) { const v = XA[t * n + i] - XB[t * n + i]; s += v * v; }
+      d[t] = Math.sqrt(s / n);
+    }
+    return describeEcho(d, t0);
+  }
+
+  function echoOfImpulse(states, steps, n) {
+    const d = new Float64Array(steps);
+    for (let t = 0; t < steps; t++) {
+      let s = 0;
+      for (let i = 0; i < n; i++) { const v = states[t * n + i]; s += v * v; }
+      d[t] = Math.sqrt(s / n);
+    }
+    return describeEcho(d, 0);
+  }
+
+  /* Signed pieces of a linear readout at every step: y^ = bias + direct + sum_i w_i x_i.
+     `direct` may be null when the saved trace lacks the model inputs; it is then inferred
+     as "prediction minus everything else" where a prediction exists. */
+  function readoutParts(X, T, n, nodes, bias, direct, predicted) {
+    const P = new Float64Array(T), N = new Float64Array(T), Dr = new Float64Array(T), net = new Float64Array(T);
+    let ext = 1e-9, residual = 0;
+    for (let t = 0; t < T; t++) {
+      let p = 0, q = 0;
+      for (let i = 0; i < n; i++) { const v = nodes[i] * X[t * n + i]; if (v >= 0) p += v; else q += v; }
+      const known = predicted && isFinite(predicted[t]);
+      const d = direct ? direct[t] : (known ? predicted[t] - bias - p - q : NaN);
+      P[t] = p; N[t] = q; Dr[t] = d; net[t] = p + q + bias + d;
+      if (isFinite(d)) {
+        ext = Math.max(ext, p + Math.max(d, 0) + Math.max(bias, 0), -(q + Math.min(d, 0) + Math.min(bias, 0)));
+        if (direct && known) residual = Math.max(residual, Math.abs(net[t] - predicted[t]));
+      } else ext = Math.max(ext, p, -q);
+    }
+    return { P, N, Dr, bias, net, ext, residual, inferred: !direct };
+  }
+
+  function solve(A, b, m) {           // Gaussian elimination with partial pivoting, A is m*m row-major
+    A = Float64Array.from(A); b = Float64Array.from(b);
+    for (let c = 0; c < m; c++) {
+      let piv = c, best = Math.abs(A[c * m + c]);
+      for (let r = c + 1; r < m; r++) { const v = Math.abs(A[r * m + c]); if (v > best) { best = v; piv = r; } }
+      if (best < 1e-14) continue;
+      if (piv !== c) {
+        for (let k = c; k < m; k++) { const t = A[c * m + k]; A[c * m + k] = A[piv * m + k]; A[piv * m + k] = t; }
+        const t = b[c]; b[c] = b[piv]; b[piv] = t;
+      }
+      for (let r = c + 1; r < m; r++) {
+        const f = A[r * m + c] / A[c * m + c];
+        if (f === 0) continue;
+        for (let k = c; k < m; k++) A[r * m + k] -= f * A[c * m + k];
+        b[r] -= f * b[c];
+      }
+    }
+    const x = new Float64Array(m);
+    for (let r = m - 1; r >= 0; r--) {
+      let s = b[r];
+      for (let k = r + 1; k < m; k++) s -= A[r * m + k] * x[k];
+      x[r] = Math.abs(A[r * m + r]) < 1e-14 ? 0 : s / A[r * m + r];
+    }
+    return x;
+  }
+
+  /* Ridge readout for "the input h steps from now": y^(t+h) = b + w_u u(t) + sum_i w_i x_i(t). */
+  function fitReadout(X, u, T, n, opt) {
+    const h = opt.horizon, wash = opt.washout, trainEnd = opt.trainEnd, lam = opt.ridge;
+    const m = n + 2, G = new Float64Array(m * m), r = new Float64Array(m), f = new Float64Array(m);
+    const feat = t => { f[0] = 1; f[1] = u[t]; for (let i = 0; i < n; i++) f[2 + i] = X[t * n + i]; };
+    for (let t = wash; t < trainEnd - h; t++) {
+      feat(t); const y = u[t + h];
+      for (let a = 0; a < m; a++) { r[a] += f[a] * y; const fa = f[a]; for (let c = a; c < m; c++) G[a * m + c] += fa * f[c]; }
+    }
+    for (let a = 0; a < m; a++) { for (let c = 0; c < a; c++) G[a * m + c] = G[c * m + a]; if (a > 0) G[a * m + a] += lam; }
+    const w = solve(G, r, m);
+    const pred = new Float64Array(T).fill(NaN);
+    for (let t = wash; t < T - h; t++) { feat(t); let s = 0; for (let a = 0; a < m; a++) s += w[a] * f[a]; pred[t] = s; }
+    let se = 0, sb = 0, c = 0;
+    for (let t = trainEnd; t < T - h; t++) { const y = u[t + h]; se += (pred[t] - y) ** 2; sb += (u[t] - y) ** 2; c++; }
+    let cmax = 0;
+    for (let t = wash; t < T; t++) for (let i = 0; i < n; i++) { const v = Math.abs(w[2 + i] * X[t * n + i]); if (v > cmax) cmax = v; }
+    return { w, pred, horizon: h, washout: wash, trainEnd, rmse: c ? Math.sqrt(se / c) : NaN,
+             baseline: c ? Math.sqrt(sb / c) : NaN, cmax };
+  }
+
+  function saturation(X, T, n) {
+    const hit = new Uint8Array(n);
+    for (let t = 0; t < T; t++) for (let i = 0; i < n; i++) if (Math.abs(X[t * n + i]) >= 0.97) hit[i] = 1;
+    let c = 0; for (let i = 0; i < n; i++) c += hit[i];
+    return c;
+  }
+
+  function sunflower(n) {             // fallback layout when the host supplies none
+    const pos = [], ga = Math.PI * (3 - Math.sqrt(5));
+    for (let i = 0; i < n; i++) { const r = 0.94 * Math.sqrt((i + 0.5) / n), a = i * ga; pos.push([r * Math.cos(a), r * Math.sin(a)]); }
+    return pos;
+  }
+
+  /* Turn the two read-only endpoint results of a trained run into what the page draws.
+       Pure numerics: this is where model values and drawn values are kept apart. */
+    function prepareRun(payload) {
+    const st = payload.structure, fr = payload.frames, ro = st.readout;
+    const n = st.units, Tn = fr.count, X = new Float64Array(Tn * n);
+    fr.states.forEach((row, t) => X.set(row, t * n));
+    const num = a => Float64Array.from(a, v => (v == null ? NaN : +v));
+    const range = arrs => { let lo = Infinity, hi = -Infinity; for (const a of arrs) for (const v of a) if (isFinite(v)) { if (v < lo) lo = v; if (v > hi) hi = v; }
+                            if (!(hi > lo)) { lo -= 1; hi += 1; } return [lo, hi]; };
+    const scale = (a, [lo, hi]) => a.map(v => (isFinite(v) ? ((v - lo) / (hi - lo)) * 1.8 - 0.9 : NaN));
+    const uRaw = num(fr.inputs), truth = num(fr.truth), pred = num(fr.prediction);
+    // Two separate things (V0.7.1): what the model receives, and how it is drawn.
+    // One input: the model sees (u - train mean) / train std. That exact value drives the input
+    // lines; the track and the port show it times one positive factor, so zero and sign agree.
+    // Several inputs: the trace only keeps a summary, so there is no model input to show.
+    const single = st.inputs === 1 && ro.input_std && Math.abs(ro.input_std[0]) > 1e-12;
+    let uModel = null, uShow;
+    if (single) {
+      uModel = uRaw.map(v => (isFinite(v) ? (v - ro.input_mean[0]) / ro.input_std[0] : NaN));
+      let m = 1e-9; for (const v of uModel) if (isFinite(v) && Math.abs(v) > m) m = Math.abs(v);
+      uShow = uModel.map(v => (v / m) * 0.9);
+    } else uShow = scale(uRaw, range([uRaw]));
+    const h = Math.max(1, st.forecast.horizon | 0), yr = range([truth, pred]);
+    const tN = scale(truth, yr), pN = scale(pred, yr);
+    // A stored frame describes source step s; its forecast targets s+h inside
+    // that *same* episode. A global index +h can cross recording boundaries.
+    // An explicit episode-local lookup also handles strided playback safely.
+    const hasEpisodes = Array.isArray(fr.episode_id) && fr.episode_id.length === Tn &&
+      Array.isArray(fr.local_step) && fr.local_step.length === Tn;
+    const legacyUnbounded = st.forecast.project === "ebrush_motion_v1" && !hasEpisodes;
+    const episodes = hasEpisodes ? fr.episode_id.slice() : Array(Tn).fill(0);
+    const localSteps = hasEpisodes ? fr.local_step.slice() :
+      Array.from({ length: Tn }, (_, i) => fr.timestep ? fr.timestep[i] - h : fr.start + i * (fr.stride || 1));
+    const episodeBoundaries = Array(Tn).fill(false);
+    for (let i = 1; i < Tn; i++) episodeBoundaries[i] = episodes[i] !== episodes[i - 1];
+    const targets = hasEpisodes && Array.isArray(fr.target_local_step) ? fr.target_local_step : localSteps.map(v => v + h);
+    const outputAtSource = Array(Tn).fill(-1), targetIndex = new Map();
+    for (let i = 0; i < Tn; i++) targetIndex.set(`${episodes[i]}:${localSteps[i]}`, i);
+    const outTruth = new Float64Array(Tn).fill(NaN), outPred = new Float64Array(Tn).fill(NaN);
+    if (!legacyUnbounded) for (let i = 0; i < Tn; i++) {
+      const j = targetIndex.get(`${episodes[i]}:${targets[i]}`);
+      if (j == null) continue;              // edge of window, stride gap, or episode boundary
+      outputAtSource[i] = j;
+      outTruth[j] = tN[i];
+      outPred[j] = pN[i];
+    }
+    const recordingIds = hasEpisodes && Array.isArray(fr.recording_id) ? fr.recording_id.slice() : null;
+    const sourceWashout = fr.prediction.map(v => v == null);
+    const ed = st.edges, inIdx = [], outIdx = [];
+    for (let i = 0; i < n; i++) { inIdx.push([]); outIdx.push([]); }
+    for (let k = 0; k < ed.src.length; k++) { inIdx[ed.dst[k]].push(ed.src[k]); outIdx[ed.src[k]].push(ed.dst[k]); }
+    const nodes = Float64Array.from(ro.nodes);
+    let cmax = 1e-12;
+    for (let t = 0; t < Tn; t++) for (let i = 0; i < n; i++) { const v = Math.abs(nodes[i] * X[t * n + i]); if (v > cmax) cmax = v; }
+    // readout pieces in the model's own (standardised target) units
+    const predNorm = pred.map(v => (isFinite(v) ? (v - ro.target_mean) / ro.target_std : NaN));
+    const direct = single && ro.bypass && ro.bypass.length === 1 ? uModel.map(v => ro.bypass[0] * v) : null;
+    const parts = readoutParts(X, Tn, n, nodes, ro.bias, direct, predNorm);
+    // echo: prefer the engine's long-window verdict; older payloads only carry 96 animation frames
+    let echo = null;
+    if (st.echo && st.echo.curve && st.echo.curve.length) {
+      const s = st.echo;
+      echo = { d: Float64Array.from(s.curve), peak: s.peak, t0: 0, status: s.status, window: s.window, trend: s.trend,
+               len: s.length == null ? s.window : s.length, settled: s.status === "decayed" || s.status === "silent" };
+    } else if (st.impulse && st.impulse.steps) {
+      const flat = new Float64Array(st.impulse.steps * n); st.impulse.states.forEach((row, t) => flat.set(row, t * n));
+      echo = echoOfImpulse(flat, st.impulse.steps, n); echo.legacy = true;
+    }
+    let washEnd = 0;
+    if (fr.start === 0) { while (washEnd < Tn && !isFinite(outPred[washEnd])) washEnd++; }
+    return { kind: "run", runId: String(payload.runId || ""), T: Tn, n, X, u: uShow, uModel, pos: payload.positions || sunflower(n),
+             episodes, localSteps, episodeBoundaries, recordingIds, outputAtSource,
+             sourceWashout, legacyUnbounded, hasEpisodes,
+             src: ed.src, dst: ed.dst, w: ed.weight, inIdx, outIdx,       // weights stay in model units
+             win: single ? st.input_weights.map(r => r[0]) : null, gain: 1, rho: 1,
+             echo, fit: legacyUnbounded ? null : { nodes, cmax, horizon: h }, parts: legacyUnbounded ? null : parts, outTruth, outPred, horizon: h, washEnd, sat: saturation(X, Tn, n), amp: 1,
+             tStart: fr.start, total: fr.total, split: fr.split, splitStarts: fr.split_starts || {},
+             inputs: st.inputs, washout: st.forecast.washout, project: st.forecast.project,
+             edgeShown: ed.shown, edgeTotal: ed.total, structure: st };
+  }
+
+  return { PREROLL, PULSE_WIDTH, PULSE_AMP, makeNet, step, run, signal, withPokes, echo, echoOfImpulse, classifyEcho, describeEcho, readoutParts, prepareRun,
+           solve, fitReadout, saturation, sunflower };
+})();
+if (typeof module !== "undefined") module.exports = RCEngine;
+/*ENGINE-END*/
+</script>
+<script>
+const NETS = /*NETWORKS-BEGIN*/[{"seed":2026,"n":48,"radius":1.0,"src":[1,14,42,47,25,26,17,36,39,45,46,9,15,23,32,7,8,37,23,28,36,38,45,0,15,16,21,31,35,47,3,13,17,22,29,44,6,12,15,12,21,22,33,2,9,12,13,19,30,20,47,1,10,18,22,43,47,9,12,35,39,41,42,7,12,37,1,3,10,32,43,7,11,13,15,30,32,35,42,43,0,24,2,7,32,35,40,1,2,3,10,17,19,38,43,9,11,14,20,23,24,35,38,13,17,20,35,6,18,46,5,12,21,29,33,40,8,13,29,13,0,1,21,25,41,10,14,17,27,34,43,18,46,24,25,35,38,1,17,27,40,46,1,5,27,31,37,38,6,23,25,30,40,41,5,34,44,46,1,9,25,35,37,12,27,30,32,42,1,5,22,37,21,23,24,37,4,14,35,9,21,35,7,18,34,36,43,46,2,14,29,40,43,2,8,9,13,20,34,43],"dst":[0,1,1,1,2,2,3,3,3,3,3,4,4,4,4,5,5,5,6,6,6,6,6,7,7,7,7,7,7,7,8,8,8,8,8,8,9,9,9,10,10,10,10,11,11,11,11,11,11,12,12,13,13,13,13,13,13,14,14,14,14,14,14,15,15,15,16,16,17,17,17,18,18,18,18,18,18,18,18,18,19,19,20,20,20,20,20,21,21,21,21,21,21,21,21,22,22,22,22,22,22,22,22,24,24,24,24,25,25,25,26,26,26,26,26,26,27,27,27,28,29,29,29,29,29,30,30,30,30,30,30,31,31,32,32,32,32,33,33,33,33,33,34,34,34,34,34,34,36,36,36,36,36,36,37,37,37,37,38,38,38,38,38,39,39,39,39,39,40,41,41,41,42,42,42,42,43,43,43,44,44,44,45,45,45,45,45,45,46,46,46,46,46,47,47,47,47,47,47,47],"w":[0.1174887,-0.4728813,0.2871732,0.9929482,-0.2238521,-0.3328315,1.425117,0.5550326,-0.3552962,0.2721719,0.0561026,0.2009445,0.3840553,0.0316193,0.1815984,-0.6498109,-0.0605702,0.4692067,0.306201,-0.4440876,-0.163189,-0.5302721,-0.5460176,0.3235838,0.671655,0.827377,0.1239746,0.2461937,-0.2121175,-0.0106478,-0.1136056,-0.2315651,-0.5423732,0.2307649,-0.1703645,0.3508314,-0.4177649,-0.7133506,-0.4736378,-0.6321011,0.3448534,-0.5352634,0.0158682,0.6849964,0.0106279,-0.2189444,-0.6597803,0.4770698,-0.5605326,0.3976471,0.0511479,-0.275198,0.1726519,-0.4596511,0.0743172,0.4059402,-0.765491,0.1877664,-0.0675462,0.417698,0.5590543,-0.3763543,-0.4131332,-0.1121334,-0.1565919,-0.2604725,0.7533947,-0.602973,-0.464028,-0.6828943,0.4306974,0.3505458,0.5967449,0.09588,-0.3449575,0.6335764,-0.3336757,0.3029309,0.5376405,0.1686521,0.4317409,-0.5274057,0.6201945,-0.5057481,0.4811339,0.238697,0.1941047,-0.2386541,-0.3255527,-0.6415121,0.2136596,0.3332118,0.4814576,-0.3390563,0.2194301,0.6497622,0.0954074,-0.0842736,0.3928028,-0.0652451,-0.1665959,0.1852911,-0.4120637,0.175781,0.2139294,0.5082071,-0.1864167,0.2139468,0.5886954,0.6216834,-0.2259019,-0.3847382,0.2266867,-0.3277956,0.4214834,0.4438678,0.374798,-0.8668845,-0.0125016,0.5285522,0.0703305,1.1138666,-1.2489546,-0.2210022,0.348852,-0.3158156,0.1149475,-0.7615183,0.2244478,-0.450598,0.5739524,0.7908163,-0.3538957,0.0035635,-0.2684154,0.2844684,0.526187,-0.4962613,-0.3877626,-0.8292196,0.299956,-0.3645331,-0.2672387,0.3952755,-0.0681515,-0.3760688,0.6461877,0.6880308,-0.0466428,0.0948655,-0.2872101,-0.0892473,-0.4853988,-0.4502511,-0.8573994,0.2474545,0.49721,-0.7414948,-0.2478168,-0.1610281,-0.1449365,-0.0034945,-0.0504562,-0.3645004,0.3198636,0.327578,0.565174,0.0032889,-0.4104725,0.4697119,0.2687812,0.5558244,0.2854399,-0.1006008,0.7510171,0.2745726,0.615552,0.9597479,0.0930753,0.5413969,0.0710887,-0.2452841,-0.5586912,0.2040826,0.2417724,-0.1887848,0.0575799,0.6791194,0.5933464,0.1053288,-0.0103315,-0.0334446,-1.1814311,-0.2749266,-0.424517,-0.289678,0.1866303,1.0238241,-0.7731772,-0.0221529],"win":[-0.498444,-0.206195,-0.225544,-0.192673,0.024588,0.334534,-0.541793,-0.462996,0.999132,0.286276,-0.686801,0.048039,-0.349312,0.590048,-0.951127,0.666561,-0.504931,-0.445912,-0.10676,0.475747,0.052706,-0.213584,0.580508,0.428655,-0.025228,0.494061,0.545012,0.310388,-0.429411,0.865614,0.422575,-0.970835,0.369358,0.36044,0.592234,-0.607455,-0.644557,0.38932,-0.120457,0.070685,0.966682,-0.134177,-0.727291,-0.572764,0.971107,-0.943723,0.75188,-0.422132],"bias":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"pos":[[0.5441,0.6336],[-0.6567,0.6726],[-0.3169,0.0582],[0.0826,0.9364],[0.8955,0.2858],[-0.127,-0.1224],[-0.1909,-0.3769],[-0.028,-0.9396],[0.1333,0.5363],[0.9375,-0.0685],[0.6131,0.3241],[0.138,-0.7381],[-0.9351,0.0962],[-0.86,-0.1539],[-0.8437,-0.4144],[-0.4169,0.7772],[-0.1686,0.8609],[-0.6127,-0.5343],[0.3702,-0.2644],[-0.0267,0.1193],[0.2977,-0.5305],[-0.1221,-0.6964],[0.2471,-0.0303],[0.6089,-0.1498],[0.7259,0.0859],[0.3663,-0.8657],[-0.3776,-0.1962],[-0.5681,-0.0178],[-0.2897,-0.8942],[0.3747,0.4335],[-0.5654,0.4296],[0.7815,0.5224],[-0.5247,-0.7799],[0.3515,0.8117],[-0.0747,0.3771],[0.0404,-0.4959],[0.8056,-0.4843],[-0.3295,0.3189],[-0.6262,-0.2726],[0.2115,0.2288],[-0.255,0.5704],[-0.6995,0.2067],[-0.3557,-0.5799],[0.547,-0.4581],[0.5913,-0.7308],[0.4655,0.1098],[0.1034,-0.2453],[-0.8358,0.4302]]},{"seed":2027,"n":48,"radius":1.0,"src":[8,24,26,35,40,44,11,16,32,47,15,18,21,28,30,33,34,46,7,10,11,23,36,44,10,16,18,21,28,33,3,26,35,15,24,30,33,37,40,18,27,9,12,14,32,0,33,43,2,4,24,37,39,43,20,25,36,4,11,8,20,33,40,1,9,22,3,6,12,21,22,36,43,4,18,7,10,13,19,42,44,4,16,36,37,40,5,18,39,15,38,41,45,47,1,10,14,35,43,6,17,26,29,31,4,8,18,33,35,7,33,35,17,19,1,9,14,28,40,41,45,9,13,14,17,18,21,25,0,9,18,31,46,21,27,32,33,38,1,16,45,16,33,36,16,21,37,41,6,15,22,31,43,12,16,18,36,38,42,4,9,24,39,47,2,5,10,38,45,47,8,44,11,14,17,35,45,46,8,16,19,36,44,3,24,26,34,38,39,21,29,30,34,7,12,31,45,0,24,14,17,0,15,16,26,2,4,20,44,45],"dst":[0,0,0,0,0,0,1,1,1,1,2,2,2,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,5,6,6,6,6,6,6,7,7,8,8,8,8,9,9,9,10,10,10,10,10,10,11,11,11,12,12,13,13,13,13,14,14,14,15,15,15,15,15,15,15,16,16,17,17,17,17,17,18,19,19,19,19,19,20,20,20,21,21,21,21,21,22,22,22,22,22,23,23,23,23,23,24,24,24,24,24,25,25,25,26,26,27,27,27,27,27,27,27,28,28,28,28,28,28,28,29,29,29,29,29,30,30,30,30,30,31,31,31,32,32,32,33,33,33,33,34,34,34,34,34,35,35,35,35,35,35,36,36,36,36,36,37,37,37,37,37,37,38,38,39,39,39,39,39,39,40,40,40,40,40,41,41,41,41,41,41,42,42,42,42,43,43,43,43,44,44,45,45,46,46,46,46,47,47,47,47,47],"w":[-0.3116709,-0.0739209,-0.0595736,-0.1700468,0.8049114,0.8827435,-0.0730367,0.6141699,0.1081365,-0.1194918,-0.2848271,1.1855933,0.0834457,-0.3365567,1.267502,1.189093,-0.0867798,-0.7601967,0.4652534,0.3973516,-0.2190151,0.4210104,0.0396925,-0.0261322,-0.2477829,0.6923012,-0.1246094,0.6131542,-0.0816522,0.7749029,0.1423935,-0.9938377,-0.3246225,0.406696,-0.8671442,-0.3006402,-0.6586674,-0.1227251,0.4460211,0.1827502,-0.3943977,-0.0014872,0.0657983,-0.0539372,0.1012299,-0.0046308,0.6377823,-0.5382483,0.5931494,-0.0636586,0.185639,0.5548217,0.0509483,0.6962475,-0.1941556,-0.3920699,0.1479651,0.6815274,-0.7810409,-0.4802141,-0.1491876,0.996506,0.0571502,0.2032946,0.5858625,-0.521772,-0.6547591,0.0588022,-0.4778618,0.000129,0.6038686,-0.3441512,0.6748281,0.2992923,0.6760315,0.0977833,-0.2041662,-0.6490375,-0.4301393,0.6382571,-0.4662633,0.3110924,-0.2048898,-0.0669036,-0.3066778,-0.6086994,-1.353521,0.1615829,0.586507,-0.4813472,-0.2461093,-0.4081863,0.8588397,0.4552684,-0.1005033,1.0005763,-0.6033606,0.6485631,0.2218817,0.178659,-0.6911753,-0.4399108,0.511287,-0.7177294,-0.2355243,-0.3731679,0.6945449,0.2717966,-0.234471,0.1498556,0.0368016,-0.1390139,0.0745575,-1.1222107,0.1250071,-0.2480853,-0.1037932,0.4339515,-0.1329051,0.0887953,0.9543497,-0.2462534,-0.5759384,0.8977961,0.088105,0.4566284,-0.0527853,0.5468222,-0.535817,0.791711,0.2962702,-0.0506644,0.7463384,-0.669185,-0.4340766,0.6303613,-0.7378822,-0.5586226,-0.1810942,-0.7332372,-0.3659019,-0.3320028,-0.0266369,-0.4536641,-0.4956064,-1.080115,0.0039466,-0.1040537,-0.6637053,-0.5798023,0.1654649,-0.0565069,0.3011429,0.1565528,-0.0804347,0.3995821,0.4338814,-0.2041166,-1.0167597,-0.7407766,0.5591118,-0.8859655,0.2686867,-0.0936755,-0.1500665,0.2664696,-0.5377903,-0.0628078,0.3910477,-0.2483948,0.8563504,0.0891937,0.3492851,0.994379,0.6091111,-0.3649035,-0.0751924,0.2553345,-0.1286492,1.1461043,-0.7856463,0.1789528,0.3035007,-0.1064725,-0.7556468,-0.067738,-0.6892936,0.9704015,0.3414317,-0.369012,0.6601957,-0.9143523,0.4763578,-0.6180737,0.1488419,0.9269951,-0.0315328,-0.7046853,-0.1718444,0.5530191,-0.0483605,0.9008154,-0.7331542,0.1615356,-0.6225215,0.6971751,-0.4142073,-0.2664977,0.2726019,-0.4050493],"win":[-0.658451,-0.709318,0.340199,0.707512,0.013058,0.65105,0.645856,0.933212,0.365192,-0.447637,-0.691822,-0.680751,0.444572,0.579391,0.284916,0.707983,0.186686,-0.738727,0.095804,0.881155,0.793152,-0.046808,0.963778,-0.006645,0.765849,-0.684662,-0.638225,-0.633478,-0.427523,0.689172,-0.491574,0.907547,0.790994,-0.338524,0.348573,-0.742271,-0.220374,-0.390052,-0.457769,-0.659353,-0.487331,-0.183015,0.557041,-0.698933,0.083882,-0.346073,-0.674394,-0.886491],"bias":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"pos":[[-0.139,0.7019],[-0.6427,-0.2174],[-0.5598,0.4367],[0.5908,0.7311],[0.5036,0.3325],[-0.1146,-0.2298],[-0.4671,-0.0226],[0.2945,0.0043],[0.1798,-0.2314],[0.4411,-0.2202],[-0.6415,0.687],[0.5899,-0.7318],[-0.7012,0.0841],[-0.3589,-0.6883],[0.7161,-0.5014],[-0.9099,0.2361],[0.1217,0.7316],[0.2462,0.3727],[-0.9397,-0.0226],[0.547,0.0735],[0.3255,-0.4559],[0.0163,0.4939],[-0.3314,0.8796],[-0.2281,-0.9119],[0.0321,-0.9395],[0.034,-0.015],[-0.5307,-0.4647],[-0.2249,-0.4676],[-0.6161,-0.7099],[0.1694,-0.6661],[0.356,0.6144],[-0.8109,0.4754],[0.3384,0.877],[-0.374,-0.2589],[0.0331,-0.4459],[-0.0905,-0.6908],[0.743,0.5172],[-0.2318,0.4148],[0.9375,0.0689],[-0.3866,0.6261],[-0.217,0.0555],[-0.0286,0.2378],[-0.0353,0.9393],[0.2907,-0.8939],[-0.7872,-0.5137],[-0.8977,-0.2788],[0.7531,0.2549],[-0.412,0.2279]]},{"seed":2031,"n":48,"radius":1.0,"src":[1,8,11,12,18,20,25,30,11,29,12,18,20,27,28,31,40,43,44,45,22,30,10,36,3,10,13,22,25,7,10,19,38,11,18,19,20,19,27,31,37,7,10,18,23,6,11,18,34,35,37,38,45,9,16,19,20,23,36,37,40,47,26,30,37,11,19,22,30,32,39,3,4,8,16,17,21,27,36,41,3,7,8,10,12,13,26,34,35,22,34,45,47,5,27,33,36,37,42,45,0,13,21,45,5,11,36,43,2,7,39,13,24,25,31,3,39,3,7,8,30,34,0,10,40,41,6,13,35,39,11,13,17,32,33,43,23,28,43,0,1,6,12,24,25,39,40,1,21,33,43,6,8,13,32,30,37,11,12,13,20,37,10,22,32,35,38,40,18,20,45,22,30,36,40,41,14,47,11,32,5,12,14,33,16,41,43,32,41,44,0,11,12,14,16,32,36,37,3,36,14,22,23,39,2,4,15,23,30,41,46,6,10,20,32,33,34,4,10,19,42,44,47,31,39,42],"dst":[0,0,0,0,0,0,0,0,1,1,2,2,2,2,2,2,2,2,2,2,3,3,4,4,5,5,5,5,5,6,6,6,6,7,7,7,7,8,8,8,8,9,9,9,9,10,10,10,10,10,10,10,10,11,11,11,11,11,11,11,11,11,12,12,12,13,13,13,13,13,13,14,14,14,14,14,14,14,14,14,15,15,15,15,15,15,15,15,15,16,16,16,16,17,17,17,17,17,17,17,18,18,18,18,19,19,19,19,20,20,20,21,21,21,21,22,22,23,23,23,23,23,24,24,24,24,25,25,25,25,26,26,26,26,26,26,27,27,27,28,28,28,28,28,28,28,28,29,29,29,29,30,30,30,30,31,31,32,32,32,32,32,33,33,33,33,33,33,34,34,34,35,35,35,35,35,36,36,37,37,38,38,38,38,39,39,39,40,40,40,41,41,41,41,41,41,41,41,42,42,43,43,43,43,44,44,44,44,44,44,44,45,45,45,45,45,45,46,46,46,46,46,46,47,47,47],"w":[0.1980564,0.4117717,0.3662459,-0.7278322,-0.9865844,-0.6704299,0.1850215,-0.3121276,0.5473912,0.2694195,-0.1793346,-0.3976567,-0.3520785,-0.0460287,-0.6665208,-0.5137837,1.0064072,0.4365142,0.1314222,0.2204653,0.2498273,0.1186306,0.2799409,0.2645258,0.6630446,0.5560999,0.2463507,-0.2112259,-0.3625732,0.2795643,-0.2653652,-0.4356932,0.4768709,-0.5506306,-0.0672793,-0.1271796,0.2301577,-0.1034101,-0.2722392,0.1564876,-0.4207495,0.3139734,0.1159942,0.5555511,0.02018,0.7547611,0.4559181,0.1197129,-0.9595143,-0.6004976,-0.4695602,-0.4913603,0.4681961,0.0732906,0.6060533,0.2558356,0.5263027,0.0656597,0.1767115,0.8282225,-0.5343032,0.3159289,0.1922192,0.085785,0.1456835,-0.1462321,-0.7478965,0.9832082,-0.4765076,-0.8064587,-0.9304694,0.4188312,-0.0327787,-0.8068319,-0.51163,-0.300566,-0.4506628,0.0751212,0.3567678,-0.650898,0.6891668,0.6880557,0.3824739,0.1936615,0.9430474,0.158276,0.0445696,-1.0080732,0.6710772,0.4484354,0.2532036,-0.2395538,-0.2149332,-0.2119873,-0.5002048,0.2675515,0.0988827,0.5158842,0.0976968,-0.6706868,0.0006946,0.0010248,-0.1695875,0.4804698,-1.0107649,-0.0709253,-0.1145528,-0.3842726,-0.0517836,-0.7492015,0.0201678,0.1571005,-0.6869494,-0.4167686,0.2719068,0.9116901,0.7097343,0.534278,0.497294,-0.1948279,0.6338174,0.1254634,0.520766,0.5022196,0.3322879,-0.5231996,0.2724261,1.3970437,-0.0340118,0.0532888,0.1624667,-0.8838806,-0.0290292,-0.897541,-1.2061368,-0.3709644,0.0175122,0.1188471,0.0394201,-0.0114649,0.3294832,-0.0437097,0.5515887,0.608227,0.2916124,0.6545003,-0.2471982,0.0798359,-0.0308851,-0.5614477,0.0929981,0.4239303,0.3603857,0.3300041,0.3600377,-0.5265706,0.2541356,-0.3632712,-0.1331038,0.7931886,0.7389885,-0.1755302,0.6832224,0.326115,-0.2893182,0.088603,0.7827951,0.0924646,-0.0569992,0.2455297,0.178981,0.5579479,-0.4273132,0.1651982,-0.6216499,-1.0712623,0.2875023,-0.0470003,0.2144109,0.3740753,0.0032493,0.0592865,0.3396794,0.5758162,0.6004166,-0.0867498,0.0579528,-0.055563,0.5111698,-0.2396586,-0.9556024,-0.3082141,0.5057983,-0.3219736,1.0891392,-0.8633476,-0.4410085,-0.9210792,0.8273053,0.1375052,0.3565056,0.1053887,-0.386957,-0.0523309,-0.0867197,0.053335,0.6579532,-0.283649,-0.1618194,0.1464547,0.5260309,-0.4665214,-0.004347,-0.4520984,-0.1640039,-0.2635096,0.7671705,0.2879241,0.2214693,-0.0695644,0.4169715,0.1770284,-0.4036945,-0.0796363,-0.1378854,-0.0802944],"win":[-0.365913,0.343568,0.866113,-0.666614,-0.11112,-0.670235,-0.996735,-0.332878,-0.905525,0.215595,0.020939,-0.548085,0.991851,0.671276,0.217578,-0.989662,-0.581044,0.360368,-0.047173,-0.426999,-0.855944,-0.440514,0.619554,-0.893753,-0.554195,-0.788944,-0.776113,0.187686,0.912179,-0.411095,0.845539,0.771013,-0.710584,0.647214,-0.09868,-0.035837,0.030429,-0.675911,0.490666,0.550251,-0.18162,-0.356035,0.965511,0.030102,-0.106667,-0.181714,0.41592,-0.563558],"bias":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"pos":[[0.2201,-0.6882],[-0.0328,0.154],[-0.8672,-0.3628],[0.681,-0.0902],[-0.1104,0.6701],[0.9377,0.065],[0.8298,-0.4416],[0.3927,0.5688],[-0.3633,0.6034],[-0.6821,0.4823],[0.2231,0.195],[0.5733,-0.4919],[-0.2923,0.1527],[0.0579,-0.4825],[0.1251,-0.9316],[0.4534,0.3145],[0.6084,0.7166],[-0.7159,-0.1501],[-0.6108,-0.4119],[-0.5945,0.7281],[0.1392,0.9296],[-0.4961,-0.0091],[0.8836,0.3206],[0.5613,-0.754],[-0.6605,-0.6688],[0.3161,-0.4449],[-0.1435,-0.6504],[-0.8847,0.3176],[0.0734,0.4169],[-0.1884,0.3948],[0.6669,0.4638],[0.4584,-0.2262],[-0.6555,0.1963],[-0.8782,0.0557],[-0.4043,-0.2525],[0.3886,0.8559],[-0.158,-0.3367],[-0.4513,0.3589],[0.6709,0.1704],[-0.3756,-0.5281],[-0.1613,-0.0746],[-0.1207,0.9322],[-0.3714,0.8635],[0.9194,-0.1959],[-0.1365,-0.9127],[0.151,0.6678],[0.0832,-0.2096],[0.4394,0.047]]},{"seed":2040,"n":48,"radius":1.0,"src":[15,20,29,33,13,21,33,34,35,37,46,0,1,9,21,32,42,0,4,11,21,23,42,3,19,30,34,38,47,1,19,25,46,10,20,31,42,1,23,29,31,44,3,4,6,11,21,30,33,43,1,11,32,39,43,7,15,39,6,34,39,40,41,8,9,15,21,40,46,47,10,18,23,37,5,21,28,33,36,39,1,11,23,27,38,41,4,5,7,15,27,32,42,16,28,39,1,8,11,14,15,16,19,23,36,38,41,46,34,35,47,0,8,16,22,31,33,35,39,1,6,26,33,37,17,18,37,41,44,47,7,13,15,19,32,36,17,18,23,26,35,12,13,3,7,10,1,23,40,25,27,5,9,16,23,31,41,42,22,4,30,41,0,28,33,46,7,27,30,34,39,43,44,9,14,22,26,35,37,45,46,2,4,7,18,29,36,17,18,2,6,13,16,22,31,0,5,17,21,33,37,43,45,47,12,26,34,44,11,24,27,37,42,45,47,5,9,40,7,15,18,24,28,31,32,37,23,37,10,18,20,46,3,8,30,34,0,14,22,23,26,29,30,31,38,23,36],"dst":[0,0,0,0,1,1,1,1,1,1,1,2,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,5,5,6,6,6,6,7,7,7,7,7,8,8,8,8,8,8,8,8,9,9,9,9,9,10,10,10,11,11,11,11,11,12,12,12,12,12,12,12,13,13,13,13,14,14,14,14,14,14,15,15,15,15,15,15,16,16,16,16,16,16,16,17,17,17,18,18,18,18,18,18,18,18,18,18,18,18,19,19,19,20,20,20,20,20,20,20,20,21,21,21,21,21,22,22,22,22,22,22,23,23,23,23,23,23,24,24,24,24,24,25,25,26,26,26,27,27,27,28,28,29,29,29,29,29,29,29,30,31,31,31,32,32,32,32,33,33,33,33,33,33,33,34,34,34,34,34,34,34,34,35,35,35,35,35,35,36,36,37,37,37,37,37,37,38,38,38,38,38,38,38,38,38,39,39,39,39,40,40,40,40,40,40,40,41,41,41,42,42,42,42,42,42,42,42,43,43,44,44,44,44,45,45,45,45,46,46,46,46,46,46,46,46,46,47,47],"w":[0.8209865,0.7182347,0.5048563,-0.120026,0.0751023,0.1913407,0.0275806,0.3866015,0.4932126,0.7879803,-0.1873452,-0.2530208,-0.5139453,-0.2735979,0.0733681,0.2490355,0.5003879,-0.3422803,-0.1922721,-0.4909699,-0.0373177,0.7592645,-0.1964307,-0.3734548,-0.1500174,0.666724,0.1968744,-0.0122355,-0.3691672,-0.4156778,0.7426388,-0.1650011,-0.7054326,0.3992189,0.1997475,-0.2233303,0.2349155,0.0530517,0.1987093,0.1520253,-0.8869925,0.1860304,0.0588741,-0.4427683,0.1184948,-0.6363866,0.0875808,-0.2270984,0.5215111,0.7525585,0.5217757,-0.1255909,0.3257765,0.3547277,-0.3752932,0.1204181,0.1299045,0.3306048,0.1014962,-0.278333,-0.0130304,-0.1375142,0.185385,0.1967029,0.3560802,0.2561234,0.0929247,0.5595566,-0.3911757,0.1037565,-0.2748296,-0.1819548,0.0144479,0.1167067,-0.1069823,0.1408579,0.0862772,-0.4581589,-0.2684146,-0.4275464,0.1277745,-0.7089082,-0.1192065,0.5845752,0.6557728,0.4820978,-0.1598994,-0.2746355,0.292481,0.0683693,0.7088249,0.049034,-1.1747084,0.388534,0.5420945,-0.5442,-0.0729589,-0.1408962,-1.1286514,0.5895627,-0.0127018,-0.6314357,0.598941,0.400184,0.3711149,-0.2323319,0.8632972,0.0072199,0.8426343,0.1389274,0.1783161,-0.0300872,1.0331217,0.1520053,0.6224648,0.9198617,-0.1558712,-0.523629,0.7768875,-0.3071983,-0.0896871,-0.301341,0.4035883,-0.2054313,-0.0588773,0.0579375,-1.0954115,-0.1751241,0.2196509,-0.3360561,-0.685582,-0.8376928,-0.1956616,-0.0720542,-0.0923604,0.5167746,0.1409839,-0.2679085,-0.7823441,-0.5932553,-0.3445072,0.0890608,0.3149864,-0.141158,-0.2165573,0.3404636,-0.327996,-0.5998363,0.8065164,-0.1557225,-0.3476305,0.3018972,0.6400616,-0.1790826,-0.603683,-0.2904208,0.4760486,-0.6509668,-0.465607,0.684204,-0.1635338,-0.0011829,0.3601523,0.0791387,-0.6950709,-0.1810101,-0.2194428,0.3017427,0.2366225,-0.205267,0.1461941,0.214432,0.0362982,0.01335,-0.5209416,-0.2273108,-0.6111537,0.082492,0.4915343,0.075712,0.3836991,-0.3420213,-0.3252265,-0.3130356,-0.0892306,-0.8034728,0.0508881,-0.0886443,-0.2445572,0.1032189,0.8945239,-0.489166,-0.4622344,-0.7501194,0.7297775,-0.3769106,0.3549309,0.4761346,-0.309341,-0.6126034,0.0353976,-0.2483191,0.5785602,0.6261165,0.4562081,0.5186782,0.5789164,-0.227562,-0.3410985,0.328236,0.0657135,-0.5986796,-0.0075426,0.239482,-0.3927304,0.1796038,-0.2871063,0.2644511,0.2937732,0.2414083,-0.1723115,-0.539716,0.5403832,0.0918928,0.3666325,-0.0972202,-0.3910906,-0.3412457,-0.0215554,0.2073377,-0.8469773,0.5603615,-0.2993289,-0.4508237,-0.1548493,0.7052094,-0.2014182,-0.1825722,-0.3036475,0.5354299,-0.0921303,-0.7537532,0.35619,0.0551469,-0.6772448,-0.2033174,0.2926376],"win":[0.190484,-0.920281,-0.225369,0.311428,0.286277,-0.889861,-0.858014,0.98459,-0.238071,0.382003,-0.572224,0.115792,-0.266918,0.423111,-0.230969,-0.408077,-0.991287,-0.058776,-0.475153,-0.239535,-0.300627,-0.21514,-0.195083,-0.087331,-0.007488,0.866151,0.275418,-0.410167,0.502803,0.765565,0.225003,0.901403,-0.383444,-0.277727,-0.526417,-0.552049,0.961386,0.368659,-0.278882,0.516517,-0.791342,-0.033887,0.312497,0.526216,-0.405291,0.477299,-0.988822,-0.814275],"bias":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"pos":[[0.2093,0.2097],[0.1171,0.4804],[0.6175,0.3397],[-0.0444,0.2747],[-0.7049,0.0258],[-0.7257,-0.5975],[0.8763,0.0768],[0.4658,-0.8164],[-0.6441,-0.2289],[0.5584,-0.3199],[-0.2975,-0.8917],[-0.5159,0.2072],[0.8771,0.3381],[0.4411,-0.5534],[0.6863,-0.6423],[0.1991,0.9187],[-0.5075,-0.452],[-0.381,0.8593],[-0.6038,0.7205],[-0.2953,0.3486],[0.9225,-0.1807],[-0.5326,-0.7746],[0.3872,-0.121],[0.5519,0.7406],[-0.4528,-0.0494],[0.3713,0.4236],[-0.5278,0.4694],[-0.3152,-0.2731],[-0.0642,-0.3504],[-0.2977,0.6108],[0.7494,0.5675],[-0.0561,-0.6127],[-0.2319,0.0917],[-0.3157,-0.6296],[-0.8282,0.2571],[-0.0394,-0.9392],[-0.1287,0.9312],[-0.9239,-0.1188],[0.6679,-0.0822],[-0.8624,-0.3739],[-0.7857,0.516],[-0.0458,0.6839],[0.2008,-0.6531],[0.2218,-0.9135],[0.8369,-0.428],[0.2975,0.6754],[0.1332,-0.0545],[0.4593,0.1311]]},{"seed":2053,"n":48,"radius":1.0,"src":[2,37,41,45,12,36,39,43,4,10,12,36,38,6,10,24,34,35,46,8,21,22,42,45,4,44,18,29,35,41,47,27,28,31,45,1,25,33,45,5,22,26,42,2,6,23,32,38,45,46,4,18,19,38,41,42,29,30,35,47,2,15,17,39,44,4,12,17,21,23,47,1,2,3,7,9,43,47,2,5,26,31,37,45,25,46,9,13,28,6,10,18,28,30,35,38,42,2,9,24,19,27,36,37,12,14,19,47,3,6,20,28,36,0,25,27,2,28,47,8,27,37,39,42,6,16,31,38,42,10,34,35,20,38,43,15,22,24,36,47,6,26,38,7,16,26,30,43,14,25,30,35,40,43,47,6,13,39,12,17,43,39,3,10,11,23,45,47,17,25,27,39,42,45,46,2,34,44,4,13,23,27,5,6,16,17,19,28,33,46,4,6,23,25,35,35,43,0,4,20,21,33,41,43,8,20,36,44,0,3,12,28,32],"dst":[0,0,0,0,1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,5,5,6,6,6,6,6,7,7,7,7,8,8,8,8,9,9,9,9,10,10,10,10,10,10,10,11,11,11,11,11,11,12,12,12,12,13,13,13,13,13,14,14,14,14,14,14,15,15,15,15,15,15,15,16,16,16,16,16,16,17,17,18,18,18,19,19,19,19,19,19,19,19,20,20,20,21,21,21,21,22,22,22,22,23,23,23,23,23,24,24,24,25,25,25,26,26,26,26,26,27,27,27,27,27,28,28,28,29,29,29,30,30,30,30,30,31,31,31,32,32,32,32,32,33,33,33,33,33,33,33,34,34,34,35,35,35,36,37,37,37,37,37,37,38,38,38,38,38,38,38,39,39,39,40,40,41,41,42,42,42,42,42,42,42,42,43,43,43,43,43,44,44,45,45,45,45,45,45,45,46,46,46,46,47,47,47,47,47],"w":[-0.2140302,-0.3587636,0.2631319,0.6009713,-0.5293574,0.5041566,0.3552733,-0.5474271,-0.4302844,-0.0001238,-0.4511802,0.2880001,0.252314,-0.0776571,0.6041015,0.290393,0.507893,0.1703856,-0.213549,-0.2789071,0.1255062,-0.3951621,-0.2855519,0.1718824,-0.6450459,1.1899177,-0.3195421,0.2819206,-0.6524696,-0.1505852,-0.4249028,0.2311414,0.4668237,0.1430973,-0.3424981,0.2514996,-0.1306426,-0.2671219,0.3445491,-0.0259581,0.5112887,0.6614769,-0.1472707,-0.680792,0.7031487,-0.2397416,0.2439918,-0.2561536,0.2825918,0.6516863,0.2439448,-0.479596,0.2735719,0.1555476,-0.0025594,0.1027401,0.513727,0.2220236,-0.6733657,-0.4522923,-0.7069285,0.3610407,0.3175067,-0.0959732,0.0286304,0.0060921,-0.9797674,-0.7597359,-0.7925801,0.2562061,-0.1049245,-0.5379712,0.1453603,0.5833715,0.010871,0.5637465,0.304588,-0.0466868,-0.3598879,0.5220435,-0.6519953,-0.3486954,0.5836548,-0.4282378,-0.8111973,0.2469601,0.1456216,-0.4689412,0.623079,-0.8075478,0.4812823,-0.1623362,-0.6045864,-0.4166986,-0.2616457,0.1287163,0.2714582,-0.5795011,0.7014233,0.0189886,-0.3717941,0.1361762,0.0144405,0.0335162,0.389285,-0.0844512,0.0451782,0.3479861,-0.8040417,-0.5809812,0.3978923,-0.0108479,0.4317178,-0.2741807,-0.2484323,-0.1447811,-0.1596711,-0.4873444,-0.2035434,0.1317454,0.1191091,-0.2303815,-0.1138623,0.6391868,-0.1915595,-0.1096872,0.0703839,0.369041,-0.4229046,0.1634484,-0.2607542,0.5006986,0.1092418,0.9647477,-0.0199879,-0.5003521,-0.7988578,0.2259228,-0.0597919,-0.890618,-0.1496439,1.111842,-1.0708377,-0.0711794,0.4434483,0.8458145,1.0146617,-0.3567895,-0.1235141,-0.1915262,-0.6053513,0.9775357,-0.56471,0.7778932,-0.2569084,0.8433346,-0.3473488,-0.675863,0.4834418,0.1228866,0.4362874,0.0715389,0.3751022,-0.6445577,-0.0657145,0.6876617,0.8417538,-0.8679786,0.3108983,-0.5083803,-0.2402018,0.397941,0.5375936,0.6040422,-0.2496615,-0.1903069,-0.8077224,-0.5745295,1.2267091,0.0406467,0.536886,0.381678,-0.0902261,0.1970025,-0.4988218,0.709042,0.2015603,0.1931454,-0.1347104,-0.1923398,-0.0671794,0.4864351,-0.5301193,-0.6598192,0.9307522,0.6140733,0.879621,0.0412577,0.6325557,0.4756706,-0.9314077,-1.2388332,0.0552601,0.4841021,0.9687044,0.3579328,0.2420473,0.4198771,-0.2552405,-0.9733102,-0.4807283,-0.0659358,0.1224249],"win":[-0.64577,0.299426,0.970963,-0.873297,-0.792296,0.503068,-0.334222,0.246125,-0.283638,0.482448,0.053432,0.733113,0.256554,0.66491,0.316033,0.628374,-0.131077,0.806876,0.841986,0.907656,-0.476983,0.700814,0.560948,-0.162883,-0.955395,0.468341,-0.8122,-0.872364,-0.654851,-0.386218,0.506878,0.458293,-0.003062,0.116771,0.489927,0.089737,-0.224619,-0.59811,0.862655,-0.182923,0.761205,0.883729,-0.572026,0.780811,0.599771,-0.853489,-0.698071,0.337322],"bias":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"pos":[[0.6417,0.3411],[-0.9315,0.1263],[0.2328,-0.9107],[0.3633,0.3543],[0.6931,-0.635],[0.1263,-0.4069],[0.2228,0.5757],[0.3669,0.0928],[-0.4771,-0.0299],[0.174,-0.6623],[-0.7182,-0.6065],[0.4672,-0.769],[0.8968,0.2816],[-0.6761,0.1301],[-0.4012,0.5447],[-0.9303,-0.1346],[-0.3237,-0.5228],[-0.4666,0.816],[-0.4866,-0.7268],[-0.4314,-0.2865],[0.1642,0.9255],[-0.1848,0.6893],[0.7572,-0.161],[0.0178,-0.057],[-0.0975,0.9349],[-0.1748,0.4117],[0.6538,0.0801],[-0.1388,0.1519],[-0.1275,-0.3485],[0.849,-0.4036],[0.384,0.7831],[-0.8572,-0.3857],[-0.677,-0.1971],[-0.2867,-0.8952],[0.3719,-0.4977],[-0.0776,-0.6047],[0.2465,-0.1767],[0.5,-0.1306],[0.9397,0.0237],[0.1215,0.1834],[-0.7168,0.6081],[-0.0267,-0.8617],[0.5953,-0.3714],[-0.8604,0.3785],[-0.5989,0.3765],[-0.2346,-0.1124],[-0.3916,0.2176],[0.5601,0.5895]]},{"seed":2068,"n":48,"radius":1.0,"src":[2,10,16,25,27,28,33,40,12,15,20,27,33,41,45,24,34,9,18,26,29,39,6,30,36,37,42,17,18,19,28,31,42,6,9,12,23,35,39,42,6,9,14,0,4,13,21,22,30,38,41,2,9,26,29,30,45,21,37,2,5,10,17,28,33,46,15,28,35,9,21,44,20,21,23,38,2,3,14,37,9,22,38,40,47,5,19,21,25,41,0,13,31,37,14,25,46,1,9,16,43,39,46,19,20,32,34,37,40,41,14,27,30,35,38,13,28,33,37,44,2,14,24,25,39,47,23,31,42,43,29,31,37,15,27,37,39,4,15,26,44,0,18,21,22,25,27,47,22,23,40,2,6,7,26,28,3,6,1,11,17,22,26,32,42,43,44,47,7,23,29,39,16,19,29,5,18,25,32,40,4,7,33,38,47,15,16,46,4,5,16,26,33,4,9,13,15,19,39,41,4,6,16,40,42,43,36,38,6,10,23,31,42,45,13,20,27,36,38,39,43,44],"dst":[0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,2,2,4,4,4,4,4,5,5,5,5,5,6,6,6,6,6,6,7,7,7,7,7,7,7,8,8,8,9,9,9,9,9,9,9,9,10,10,10,10,10,10,11,11,12,12,12,12,12,12,12,13,13,13,14,14,14,15,15,15,15,16,16,16,16,17,17,17,17,17,18,18,18,18,18,19,19,19,19,20,20,20,21,21,21,21,22,22,23,23,23,23,23,23,23,24,24,24,24,24,25,25,25,25,25,26,26,26,26,26,26,27,27,27,27,28,28,28,29,29,29,29,30,30,30,30,31,31,31,31,31,31,31,32,32,32,33,33,33,33,33,34,34,35,35,35,35,35,35,35,35,35,35,36,36,36,36,37,37,37,38,38,38,38,38,39,39,39,39,39,40,40,40,41,41,41,41,41,42,42,42,42,42,42,42,44,44,44,44,44,44,45,45,46,46,46,46,46,46,47,47,47,47,47,47,47,47],"w":[-0.2003981,-0.763453,0.5247435,0.5960174,0.1332284,0.4578732,0.3350099,0.0323853,-0.1326143,1.0000084,-0.088659,0.2892193,-0.5266434,0.2156344,0.4542605,-0.1097656,0.1008563,-0.0018098,-0.2317872,0.3061981,-0.0842713,-0.3355657,-0.0837889,0.5033484,0.4336503,-0.1090633,0.2012575,0.4959943,0.343505,-0.1228984,0.1944169,-0.3027819,-0.6268703,0.4957038,-0.5896611,0.2496913,-0.1183614,-0.1151575,-1.3197672,0.078611,-0.5590068,-0.6647413,-1.3568037,-1.0121222,-0.2898858,-0.7457722,-0.3324373,-0.3863012,0.1758868,0.0093272,0.1621853,0.1955041,0.2393196,-0.0496687,-0.3608137,0.0253977,-0.9292649,0.032499,0.319336,-0.2716685,-0.497355,-0.6151244,0.1167797,0.7838897,0.0869982,0.2151428,-0.0546878,-0.2665901,-0.252547,0.364065,0.318216,-1.1167806,0.5049391,0.6921726,-0.2461717,0.2981628,-0.8250227,-0.5059425,-0.5022448,0.057114,-1.3375721,-0.2562049,0.7265643,0.0590779,0.0392142,0.057254,-0.2632344,-0.5133508,-0.9637865,0.7328116,-0.2731776,0.2391976,-0.2021398,0.2509381,1.172963,-0.1868141,0.8130973,-0.1675641,-0.3662278,-0.7716537,1.1282334,0.5178541,0.4614922,0.0672374,0.3507209,0.68564,0.353131,-0.5217416,0.1686098,0.2868762,0.6085953,0.6133082,1.2314622,0.3583951,0.8940926,-0.0497763,-0.5488486,-0.2433592,-0.4549308,-0.1731091,0.055839,-0.6006366,0.2368034,0.6578028,-0.4404949,-0.1571107,0.6362596,0.5382635,0.4016155,-0.4941783,0.6332772,0.7369397,0.1028246,-0.9255863,0.0820214,-0.1575276,0.0728341,-0.3005641,-0.3172963,0.0908009,-0.2955528,-0.5610857,-0.4493942,-0.6725493,0.1239932,0.3846771,-0.1897036,0.6530232,0.1505652,-0.4390138,0.2808126,-0.7716723,-0.1219432,-0.6048613,-0.4612065,0.5975532,0.1712531,-0.0290917,-0.0628614,0.6444283,0.2287583,0.2918045,-0.6177248,-0.1613719,-0.3462235,0.8401757,0.9263164,0.3832322,-0.0068938,0.4599471,-0.2003475,0.0862997,0.4954692,-0.2106115,0.3723474,-0.0765732,0.1156212,-0.5557458,-0.7140465,-0.4621431,0.2925284,0.052942,0.090688,0.1296896,0.8573238,-0.0810718,-0.5807008,-0.7677125,-0.3167921,0.3848633,-0.4334921,0.3913895,0.0656414,0.5038159,0.2533601,0.2890789,-0.2886073,0.0808155,-0.1143869,0.9599289,-0.2353629,0.0366934,-0.0056704,0.998371,0.3191594,0.4970277,0.9127324,0.8245716,0.0792505,0.0116582,0.3238708,0.7685726,0.4684528,-0.6486803,-0.5155146,0.9096659,-0.3590452,-0.1496458,0.0981998,-0.0760067,0.1676828,-0.1272977],"win":[-0.263653,-0.345028,-0.633555,-0.980816,0.15095,-0.708827,-0.286355,-0.476244,0.69804,0.037279,0.741273,0.062408,-0.406174,-0.16773,-0.725818,0.453509,-0.286436,-0.692254,0.610557,0.913821,-0.909681,0.207659,0.430231,-0.992095,-0.950566,0.510409,0.195256,-0.706504,-0.417901,0.423515,0.446851,-0.622153,0.713621,-0.354734,0.953613,-0.75525,-0.468818,0.490235,0.332221,-0.74978,0.481793,-0.944642,0.03045,0.517071,0.931954,-0.057467,0.201797,-0.790319],"bias":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"pos":[[-0.2276,0.0868],[-0.0599,0.2871],[0.124,0.1],[0.8748,0.344],[0.5346,0.418],[-0.2922,0.7921],[0.1969,-0.9191],[-0.836,0.4297],[0.0749,0.725],[-0.0748,0.937],[-0.6841,0.6438],[-0.7536,-0.5619],[0.0448,-0.4181],[0.3234,0.6417],[0.5585,0.7561],[-0.7709,0.1755],[-0.1523,-0.6904],[0.2692,-0.2829],[0.1254,0.4703],[-0.545,-0.2057],[0.5254,-0.2302],[0.923,-0.178],[-0.3174,0.3348],[-0.7789,-0.0865],[-0.126,0.5456],[0.1094,-0.6722],[0.5337,0.1562],[-0.4779,-0.4595],[0.2693,0.9006],[0.3084,0.2857],[0.7465,-0.3713],[-0.4884,0.0597],[-0.5791,0.3541],[0.7456,0.5724],[0.6655,-0.6207],[-0.4319,0.5709],[0.9358,0.0887],[-0.2166,-0.4365],[-0.2176,-0.1747],[-0.065,-0.9378],[0.4434,-0.4795],[-0.3351,-0.8782],[0.3504,-0.0331],[0.3841,-0.7352],[0.0435,-0.1493],[-0.8764,-0.33],[-0.5401,-0.7145],[0.7041,-0.0391]]}]/*NETWORKS-END*/;
+</script>
+<script>
+(() => {
+"use strict";
+const E = RCEngine;
+const $ = id => document.getElementById(id);
+const TP = 120, TW = 240, LONG = 300, H = 6, WASH = 20, TRAIN_END = 168, RATE = 12, RUN = 5;
+// TP: steps shown for poke experiments; TW: steps for signals with a readout; LONG: unseen extra steps used only to time the echo
+const DEFAULTS = { rho: 0.9, leak: 0.35, gain: 0.85 };
+const CH = [
+  { key: "poke",    name: "敲一下",   input: "poke", tracks: ["in", "state"],        mode: "raster" },
+  { key: "nodes",   name: "各有反应", input: "poke", tracks: ["in", "state"],        mode: "lines"  },
+  { key: "readout", name: "读出",     input: "wave", tracks: ["in", "state", "out"], mode: "lines"  },
+  { key: "knobs",   name: "三个旋钮", input: "poke", tracks: ["in", "state"],        mode: "raster" },
+  { key: "free",    name: "自由实验" },
+];
+const INPUTS = [["poke", "敲击"], ["wave", "波浪"], ["chirp", "变频"], ["step", "台阶"], ["draw", "手绘"]];
+const reduceMotion = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const S = {
+  chapter: 0, done: [false, false, false, false, false],
+  netIndex: 0, net: E.makeNet(NETS[0]), p: { ...DEFAULTS },
+  inputKind: "poke", freeInput: "wave", pokes: [], drawn: null,
+  trained: false, trainedCh3: false,
+  sel: -1, hover: -1, selSeen: new Set(), rewired: false,
+  playing: !reduceMotion, pos: 0, speed: 1,
+  show: { inLines: true, edges: false, readLines: true }, freeMode: "raster",
+  sci: false, ghost: null, run: null, embedded: false, hostSeq: 0, fx: null,
+};
+let D = null;                 // data currently on screen (sandbox or real run)
+let C = {};                   // colours read from CSS variables
+let dirty = true, staticDirty = true;
+
+/* ---------- colours ---------- */
+function readColors() {
+  const cs = getComputedStyle(document.documentElement);
+  const g = n => cs.getPropertyValue(n).trim();
+  for (const n of ["paper", "surface", "ink", "ink2", "ink3", "rule", "pond0", "pond1", "pond-rim", "pond-ink",
+                   "pond-dim", "pos", "neg", "in", "out", "pos-g", "neg-g", "in-g", "out-g"]) C[n] = g("--" + n);
+  C.rgb = {}; for (const n of ["pond0", "pond1", "pos-g", "neg-g", "pond-dim"]) C.rgb[n] = hex(C[n]);
+  C.font = cs.getPropertyValue("--sans").trim();
+}
+function hex(h) { const v = parseInt(h.slice(1), 16); return [(v >> 16) & 255, (v >> 8) & 255, v & 255]; }
+function mix(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
+function rgb(c, a) { return a == null ? `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})` : `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`; }
+const glow = v => Math.pow(Math.min(1, Math.abs(v) / 0.8), 0.7);   // display curve only; |x| >= 0.8 is full brightness
+
+/* ---------- data ---------- */
+function isRun() { return S.chapter === RUN && S.run; }
+function chapterDef() { return CH[S.chapter] || {}; }
+function tracksShown() {
+  if (isRun()) return ["in", "state", "out"];
+  const c = chapterDef();
+  if (c.tracks) return c.tracks;
+  return S.inputKind === "poke" ? ["in", "state"] : ["in", "state", "out"];
+}
+function stateMode() { return isRun() || S.chapter === 4 ? S.freeMode : chapterDef().mode; }
+
+function compute() {
+  if (isRun()) { D = S.run; dirty = staticDirty = true; return; }
+  const net = S.net, p = S.p, n = net.n, T = S.inputKind === "poke" ? TP : TW;
+  const base = E.signal(S.inputKind, T, S.drawn);
+  const pokes = S.inputKind === "poke" ? S.pokes : [];
+  const u = E.withPokes(base, pokes);
+  const longer = v => { const o = new Float64Array(v.length + LONG); o.set(v); return o; };
+  const XL = E.run(net, p, longer(u)), X = XL.subarray(0, T * n);
+  let echo = null;
+  if (S.inputKind === "poke") {
+    if (pokes.length) echo = E.echo(XL, E.run(net, p, longer(E.withPokes(base, pokes.slice(0, -1)))), T + LONG, n, pokes[pokes.length - 1]);
+  } else {
+    echo = E.echo(E.run(net, p, longer(E.withPokes(u, [80]))), XL, T + LONG, n, 80);   // unseen test poke on top of the signal
+  }
+  let fit = null, outTruth = null, outPred = null, parts = null;
+  if (S.inputKind !== "poke") {
+    outTruth = u;
+    if (S.trained) {
+      fit = E.fitReadout(X, u, T, n, { horizon: H, washout: WASH, trainEnd: TRAIN_END, ridge: 1e-4 });
+      outPred = new Float64Array(T).fill(NaN);
+      for (let t = WASH; t < T - H; t++) outPred[t + H] = fit.pred[t];
+      fit.nodes = fit.w.subarray(2);
+      parts = E.readoutParts(X, T, n, fit.nodes, fit.w[0], u.map(v => fit.w[1] * v), fit.pred);
+    }
+  }
+  let amp = 0.3; for (let k = 0; k < X.length; k++) { const v = Math.abs(X[k]); if (v > amp) amp = v; }
+  D = { kind: "sandbox", T, n, X, u, pos: net.pos, src: net.src, dst: net.dst, w: net.w, inIdx: net.inIdx, outIdx: net.outIdx,
+        win: net.win, gain: p.gain, rho: p.rho, uModel: u, echo, fit, parts, outTruth, outPred, horizon: H, washEnd: WASH + H,
+        sat: E.saturation(X, T, n), tStart: 0, amp };
+  dirty = staticDirty = true;
+}
+
+const buildRun = payload => E.prepareRun(payload);   // numerics live in the engine block so Node can test them
+
+/* ---------- actions ---------- */
+function host(type, data) {
+  if (!S.embedded) return;
+  document.title = "rclab:" + JSON.stringify({ n: ++S.hostSeq, type, ...(data || {}) });
+}
+function markDone(i, detail) { if (!S.done[i]) { S.done[i] = true; renderRail(); host("progress", { chapter: CH[i].key, detail: detail || "" }); } updateNav(); }
+function fxStart(kind) { S.fx = reduceMotion ? null : { kind, t0: performance.now() }; dirty = true; }
+function fxProgress(kind, ms) {            // 0..1 while a user-triggered transition runs, 1 otherwise
+  if (!S.fx || S.fx.kind !== kind) return 1;
+  const p = (performance.now() - S.fx.t0) / ms;
+  if (p >= 1) { S.fx = null; return 1; }
+  dirty = true; return Math.max(0, p);
+}
+const echoWords = e => (e.status === "decayed" || e.status === "silent" ? `余波约 ${e.len} 步后平息`
+  : e.status === "window_too_short" ? `观察 ${e.window} 步，余波仍在减弱但未平息` : `观察 ${e.window} 步，未见衰减`);
+
+function goto(i) {
+  if (i === RUN && !S.run) return;
+  S.chapter = i; S.ghost = null;
+  if (i !== RUN) {
+    const c = CH[i];
+    S.inputKind = c.input || S.freeInput;
+    if (c.key === "readout") S.trained = S.trainedCh3;
+    if (c.key === "free") S.trained = S.inputKind !== "poke";
+    if ((c.key === "nodes" || c.key === "knobs") && !S.pokes.length) S.pokes = [12];
+    S.show = { inLines: true, edges: false, readLines: true };
+  } else S.show = { inLines: true, edges: false, readLines: true };
+  S.sel = -1; S.hover = -1;
+  if (i === RUN) $("toast").classList.remove("on");
+  compute();
+  S.pos = S.inputKind === "poke" && S.pokes.length && i !== RUN ? Math.max(0, S.pokes[S.pokes.length - 1] - 5) : 0;
+  if (!reduceMotion) S.playing = true;
+  renderRail(); renderStory(); layoutTracks(); renderTransport(); renderSegments(); updateChip();
+}
+
+function poke(t0) {
+  if (isRun() || S.inputKind !== "poke") return;
+  if (t0 == null) t0 = S.playing ? Math.floor(S.pos) + 2 : Math.round(S.pos);
+  if (t0 > TP - 40) { S.pokes = []; t0 = 10; }          // too close to the end to watch an echo: start a fresh take
+  t0 = Math.max(2, t0);
+  S.pokes = S.pokes.filter(q => Math.abs(q - t0) > 3).concat([t0]).slice(-4);
+  compute();
+  S.pos = Math.max(0, t0 - 4); S.playing = true;
+  fxStart("poke");
+  updateObs(); renderTransport(); markDone(0, D.echo ? echoWords(D.echo) : "");
+}
+const knobWords = () => `回声长短 ${fmt(S.p.rho)}、反应快慢 ${fmt(S.p.leak)}、输入力度 ${fmt(S.p.gain)}：` + (D.echo ? echoWords(D.echo) : "");
+function setParam(k, v) { S.p[k] = v; compute(); updateObs(); if (S.chapter === 3) markDone(3, knobWords()); }
+function setNet(i) { S.netIndex = (i + NETS.length) % NETS.length; S.net = E.makeNet(NETS[S.netIndex]); S.sel = -1; S.rewired = true; compute(); updateObs(); updateChip(); }
+function train(on) {
+  S.trained = on; if (S.chapter === 2) S.trainedCh3 = on;
+  compute(); renderStory(); layoutTracks();
+  if (on) {
+    fxStart("train"); S.playing = !reduceMotion || S.playing;
+    if (S.chapter === 2 && D.fit) markDone(2, `读出误差 ${fmt(D.fit.rmse, 3)}，“原地不动”的猜法 ${fmt(D.fit.baseline, 3)}`);
+  }
+}
+function select(i) {
+  S.sel = i; if (i >= 0) { S.selSeen.add(i); if (S.chapter === 1) markDone(1, `查看了节点 ${i + 1} 的反应曲线和连线`); }
+  dirty = staticDirty = true; updateObs(); updateChip();
+}
+function setInput(kind) {
+  S.inputKind = S.freeInput = kind;
+  if (kind === "draw" && !S.drawn) { S.drawn = new Float64Array(TW); for (let t = 0; t < TW; t++) S.drawn[t] = 0.5 * Math.sin(t / 11) * Math.cos(t / 37); }
+  if (kind === "poke" && !S.pokes.length) S.pokes = [12];
+  S.trained = kind !== "poke";
+  compute(); renderStory(); layoutTracks(); markDone(4, `试了“${(INPUTS.find(q => q[0] === kind) || [])[1] || kind}”输入`);
+}
+
+/* ---------- rail ---------- */
+function renderRail() {
+  let html = CH.map((c, i) => `<button type="button" class="chap${S.done[i] ? " done" : ""}" data-go="${i}"${S.chapter === i ? ' aria-current="step"' : ""}><span class="num">${i + 1}</span>${c.name}</button>`).join("");
+  if (S.run) html += `<button type="button" class="chap run" data-go="${RUN}"${S.chapter === RUN ? ' aria-current="step"' : ""}><span class="num">实</span>我的实验</button>`;
+  html += `<span class="gap"></span>`;
+  if (S.chapter < CH.length - 1) html += `<button type="button" class="tool next${S.done[S.chapter] ? " ready" : ""}" id="nextBtn" data-go="${S.chapter + 1}">下一步：${CH[S.chapter + 1].name}</button>`;
+  else if (S.chapter === CH.length - 1 && S.embedded) html += `<button type="button" class="tool next ready" data-act="workbench">用真实数据训练一个</button>`;
+  html += `<button type="button" class="tool" id="sciBtn" aria-pressed="${S.sci}">公式与注记</button>`;
+  if (!S.embedded) html += `<button type="button" class="tool" id="themeBtn">${currentTheme() === "dark" ? "浅色" : "深色"}</button>`;
+  $("rail").innerHTML = html;
+}
+function currentTheme() {
+  const t = document.documentElement.dataset.theme;
+  if (t) return t;
+  return window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+function setTheme(t) { document.documentElement.dataset.theme = t === "dark" ? "dark" : "light"; readColors(); dirty = staticDirty = true; renderRail(); renderLegend(); drawMini(); }
+$("rail").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.go != null) goto(+b.dataset.go);
+  else if (b.dataset.act === "workbench") host("workbench");
+  else if (b.id === "sciBtn") { S.sci = !S.sci; $("app").classList.toggle("show-sci", S.sci); renderRail(); }
+  else if (b.id === "themeBtn") setTheme(currentTheme() === "dark" ? "light" : "dark");
+});
+
+/* ---------- story ---------- */
+const fmt = (v, d = 2) => (isFinite(v) ? v.toFixed(d) : "—");
+function knobHTML(k, name, tech, lo, hi, step, left, right) {
+  return `<div class="knob"><div class="row"><span class="name">${name}</span><span class="tech">${tech}</span><span class="val" id="val-${k}">${fmt(S.p[k])}</span></div>
+    <div class="slide"><span>${left}</span><input type="range" data-knob="${k}" min="${lo}" max="${hi}" step="${step}" value="${S.p[k]}" aria-label="${name}（${tech}）"><span>${right}</span></div></div>`;
+}
+const knobsHTML = () =>
+  knobHTML("rho", "回声长短", "谱半径 ρ", 0.1, 1.6, 0.01, "很快忘记", "停不下来") +
+  knobHTML("leak", "反应快慢", "泄漏率 α", 0.05, 1, 0.01, "迟钝", "灵敏") +
+  knobHTML("gain", "输入力度", "输入缩放", 0.1, 3, 0.05, "轻", "重");
+const chipsHTML = (label, attr, items, cur) =>
+  `<div class="chips"><span class="lbl">${label}</span>${items.map(([k, t]) => `<button type="button" class="chip" data-${attr}="${k}" aria-pressed="${cur(k)}">${t}</button>`).join("")}</div>`;
+function navHTML() {            // shown on narrow screens only; wide screens use the button in the rail
+  const i = S.chapter, last = i === CH.length - 1;
+  return `<div class="nav">${i > 0 ? `<button type="button" class="btn ghost" data-go="${i - 1}">上一步</button>` : ""}
+    ${last ? (S.embedded ? `<button type="button" class="btn ghost next ready" data-act="workbench">用真实数据训练一个</button>` : "")
+           : `<button type="button" class="btn ghost next${S.done[i] ? " ready" : ""}" data-go="${i + 1}">下一步：${CH[i + 1].name}</button>`}</div>`;
+}
+function updateNav() { document.querySelectorAll(".next[data-go]").forEach(b => b.classList.toggle("ready", !!S.done[S.chapter])); }
+
+function renderStory() {
+  const k = isRun() ? "run" : CH[S.chapter].key;
+  let h = "";
+  if (k === "poke") h = `
+    <h1>先敲一下</h1>
+    <p class="lead">这一池光点就是储备池：${D.n} 个互相连着的节点。没有输入时它是静的。敲一下，看会发生什么。</p>
+    <div class="acts"><button type="button" class="btn" data-act="poke">敲一下</button><span class="hint">也可以点下方“输入”那一行的任意位置</span></div>
+    <div class="obs"><div class="echo"><div id="head"></div><canvas class="mini" id="mini"></canvas></div><div id="obs"></div></div>
+    <div class="sci">状态更新：<code>x(t) = (1−α)·x(t−1) + α·tanh(W·x(t−1) + W_in·u(t) + b)</code>，与训练引擎相同。余波强度是“敲”与“不敲”两次运行的状态差 <code>‖Δx(t)‖/√N</code>，持续步数取它降到峰值 5% 以下的时刻。这只描述这一个网络和这一次输入，不能当作回声状态性质（ESP）的证明。</div>`;
+  else if (k === "nodes") h = `
+    <h1>同一下敲击，${D.n} 种反应</h1>
+    <p class="lead">每个节点对同一次敲击的反应都不一样。下方“储备池”一行现在画的是 ${D.n} 条曲线，一个节点一条。点池子里任意一个节点，看它自己那条。</p>
+    <div class="obs"><div id="obs"></div></div>
+    <div class="acts"><button type="button" class="btn ghost" data-act="rewire">换一组随机连线</button></div>
+    <div class="sci">节点摆在哪里只是排版，远近不代表连接强弱。选中节点后：蓝线是正权重，红线是负权重，粗细表示 <code>|W|</code>，箭头指向接收方。<code>W</code> 稀疏随机（约 10% 的位置有连接），按谱半径缩放后固定不变。</div>`;
+  else if (k === "readout") h = `
+    <h1>学习只发生在读出</h1>
+    <p class="lead">换个任务：输入是一条波浪，要它提前 ${H} 步画出接下来的样子。储备池不改，只给每个节点配一个“音量”，把 ${D.n} 条曲线混成一条输出。这一步叫读出。</p>
+    <div class="acts">${S.trained ? `<button type="button" class="btn" disabled>读出已训练</button><button type="button" class="btn ghost" data-act="untrain">撤销，再看一次</button>`
+                                  : `<button type="button" class="btn" data-act="train">训练读出</button>`}</div>
+    <div class="obs"><div id="obs"></div></div>
+    <div class="sci"><code>ŷ(t+h) = b + w_u·u(t) + Σ wᵢ·xᵢ(t)</code>，岭回归 <code>λ = 1e-4</code>。时间轴前 70% 用来拟合（跳过开头 ${WASH} 步预热），后 30% 留出。对照是持续性基线 <code>ŷ(t+h) = u(t)</code>。读出线：蓝色是此刻的正向贡献 <code>wᵢ·xᵢ(t) &gt; 0</code>，红色是负向，粗细按本段最大值归一；两根柱子与下面一行数字用同一刻度，单位与输出相同。池子上方的黄线是不经过池子的输入直连项。这是示范任务，成绩不代表你的正式实验。</div>`;
+  else if (k === "knobs") h = `
+    <h1>三个旋钮，改池子的脾气</h1>
+    <p class="lead">回到敲击。拖动旋钮，余波立刻跟着变；灰色虚线是改动前的样子。</p>
+    <div class="obs top"><div class="echo"><div id="head"></div><canvas class="mini" id="mini"></canvas></div></div>
+    ${knobsHTML()}
+    ${chipsHTML("试试", "preset", [["forget", "健忘"], ["default", "默认"], ["slow", "慢性子"], ["wild", "停不下来"]], () => false)}
+    <div id="obs"></div>
+    <div class="sci"><code>ρ</code> 是循环矩阵 <code>W</code> 特征值的最大模；<code>α</code> 越小，状态每步更新得越少；输入缩放乘在 <code>W_in</code> 上。<code>ρ &lt; 1</code> 不是余波一定平息的保证，实际表现还取决于 α、输入和非线性。有限窗口里的观察不构成 ESP 证明。</div>`;
+  else if (k === "free") h = `
+    <h1>自由实验</h1>
+    <p class="lead">都解锁了。换一种输入，或者自己画一条；调旋钮，看预测还跟不跟得上。</p>
+    ${chipsHTML("输入", "input", INPUTS, v => v === S.inputKind)}
+    <div class="obs top"><div class="echo"><div id="head"></div><canvas class="mini" id="mini"></canvas></div><div id="obs"></div></div>
+    ${knobsHTML()}
+    ${chipsHTML("显示", "show", [["inLines", "输入线"], ["edges", "内部连线"], ["readLines", "读出线"]], v => S.show[v])}
+    ${chipsHTML("状态图", "mode", [["raster", "热图"], ["lines", "曲线"]], v => v === S.freeMode)}
+    <div class="acts"><button type="button" class="btn ghost" data-act="rewire">换一组随机连线</button><button type="button" class="btn ghost" data-act="reset">恢复默认</button></div>
+    <div class="sci">读出在每次改动后自动重新求解（前 70% 拟合、后 30% 留出，提前 ${H} 步）。非敲击输入下的“余波”是在第 80 步额外加一次敲击测得的，这次敲击不画在输入上。余波计时会在时间轴之外再多算 ${LONG} 步。示范网络与你的正式实验互不影响。</div>`;
+  else h = runStoryHTML();
+  $("story").innerHTML = `<div class="body">${h}</div>` + (k === "run" ? "" : navHTML());
+  updateObs(); updateNav(); renderLegend();
+}
+
+function runStoryHTML() {
+  const r = S.run, proj = r.project === "generic_esn" ? "通用 ESN" : "EBrush 运动预测";
+  const readoutDescription = r.parts
+    ? (r.parts.inferred ? "；多路输入没有随轨迹保存，直连项由‘预测 − 其余各项’得出"
+      : `；这几项相加与保存的预测最大相差 ${r.parts.residual.toExponential(1)}（状态保存为 4 位小数）`)
+    : "；旧版电子毛笔轨迹缺少录制边界，当前已禁用读出分解，需要用新版重新训练";
+  return `
+    <h1>你训练的模型</h1>
+    <p class="lead">这是实验 ${esc(r.runId.slice(0, 12))} 保存下来的真实状态，和前面是同一种图：上面是池子，下面是时间。它是只读的，这里的操作不会改动它。</p>
+    <dl class="facts"><dt>项目</dt><dd>${proj}</dd><dt>节点</dt><dd>${r.n} 个</dd><dt>输入</dt><dd>${r.inputs} 路</dd>
+      <dt>预测</dt><dd>提前 ${r.horizon} 步</dd><dt>预热</dt><dd>${r.washout} 步不计分</dd></dl>
+    ${chipsHTML("显示", "show", [...(r.win ? [["inLines", "输入线"]] : []), ["edges", "内部连线"], ["readLines", "读出线"]], v => S.show[v])}
+    ${chipsHTML("状态图", "mode", [["raster", "热图"], ["lines", "曲线"]], v => v === S.freeMode)}
+    <div class="obs"><div class="echo"><div id="head"></div><canvas class="mini" id="mini"></canvas></div><div id="obs"></div></div>
+    <div class="sci">${r.uModel ? `“输入”一行和输入端口画的是模型实际收到的标准化输入 <code>(u − 训练均值) / 训练标准差</code>，中线就是训练均值；输入线的亮度是 <code>min(1, |W_in·u|)</code>。` : ""}内部连线亮度是 <code>min(1, 2.2·|W_ij·x_j(t)|)</code>，选中节点的线宽按 <code>|W_ij|</code>，都用模型自己的数值，没有按实验另行缩放。读出各项使用标准化目标单位${readoutDescription}。回声判定来自 ${r.echo && !r.echo.legacy ? r.echo.window : 96} 步的脉冲响应，有限窗口内的衰减不构成 ESP 证明。选中节点时显示的连线来自 <code>|W|</code> 最大的 ${r.edgeShown.toLocaleString()} / ${r.edgeTotal.toLocaleString()} 条；打开“内部连线”时最多画其中最强的 420 条。没画出的连接仍参与计算。${r.legacyUnbounded ? "旧版轨迹的预测暂不展示。" : "预测值画在同一录制里对应的目标时刻 <code>t+h</code>。"}回声来自对该模型做的一次标准化输入脉冲。${r.inputs > 1 ? "多路输入的原始向量没有随轨迹保存，“输入”一行是角速度幅值摘要，因此不画输入线。" : ""}</div>`;
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function echoLine(e) {
+  if (!e || e.peak < 1e-9) return "";
+  if (e.status === "decayed" || e.status === "silent") return `<span class="n"><b>${e.len}</b> 步</span>`;
+  if (e.status === "window_too_short") return `<span class="n"><b>${e.window}+</b> 步</span>`;
+  return `<span class="n"><b>未见衰减</b></span>`;
+}
+const echoShort = g => (g.status === "decayed" || g.status === "silent" ? g.len + " 步" : g.status === "window_too_short" ? g.len + "+ 步" : "未见衰减");
+function echoCaveat(e) {                    // what the window allows us to say; never "it runs forever"
+  if (e.status === "window_too_short") return `<p>观察了 ${e.window} 步，余波还在减弱，但没有降到峰值的 5% 以下。窗口不够长，不能判定它何时平息。</p>`;
+  if (e.status === "no_decay_seen") return `<p>观察了 ${e.window} 步，余波没有减弱的迹象：池子在自己活动，分不清哪些是输入留下的。这只是这段窗口内的表现，通常不适合拿来做预测。</p>`;
+  return "";
+}
+function sumHTML() {
+  const p = D && D.parts; if (!p) return "";
+  const i = Math.max(0, Math.min(D.T - 1, Math.round(S.pos))), f = v => (isFinite(v) ? (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(2) : "—");
+  return `<span class="s"><i style="background:${C.pos}"></i>节点正向 ${f(p.P[i])}</span><span class="s"><i style="background:${C.neg}"></i>节点负向 ${f(p.N[i])}</span>` +
+    `<span class="s"><i style="background:${C.in}"></i>${p.inferred ? "输入直连（差值）" : "输入直连"} ${f(p.Dr[i])}</span><span class="s"><i style="background:${C.ink3}"></i>基准 ${f(p.bias)}</span>` +
+    `<span class="s eq"><i style="background:${C.out}"></i>合计＝预测 ${f(p.net[i])}</span>`;
+}
+let lastSum = -1;
+function updateSum(force) {
+  const el = $("sum"); if (!el) return;
+  const i = Math.round(S.pos); if (!force && i === lastSum) return;
+  lastSum = i; el.innerHTML = sumHTML();
+}
+function updateObs() {
+  const o = $("obs"); if (!o) return;
+  const k = isRun() ? "run" : CH[S.chapter].key, e = D.echo;
+  let h = "", head = "";
+  const times = r => (r >= 10 ? Math.round(r) : r.toFixed(1));
+  if (k === "poke") {
+    if (!e) h = `<p class="empty">还没敲过。池子里没有任何余波。</p>`;
+    else {
+      head = `<p class="big"><span>余波持续</span>${echoLine(e)}</p>`;
+      h = e.settled
+        ? `<p>输入只有 ${E.PULSE_WIDTH} 步长，池子却过了约 ${e.len} 步才平息。这段慢慢消退的余波就是<strong>回声</strong>，储备池靠它记得刚才发生过什么。“回声状态网络”（ESN）因此得名。</p>`
+        : echoCaveat(e) + `<p>到第 4 步可以看到是哪个旋钮造成的。</p>`;
+    }
+  } else if (k === "nodes") {
+    if (S.sel < 0) h = `<p class="empty">点池子里的任意一个节点。</p>`;
+    else {
+      const i = S.sel, t0 = e ? e.t0 : 0; let peak = 0, at = t0, last = t0;
+      const rest = D.X[Math.max(0, t0 - 1) * D.n + i];
+      for (let t = t0; t < D.T; t++) { const v = Math.abs(D.X[t * D.n + i] - rest); if (v > peak) { peak = v; at = t; } }
+      for (let t = D.T - 1; t >= t0; t--) if (Math.abs(D.X[t * D.n + i] - rest) > 0.05 * peak) { last = t; break; }
+      h = `<p><strong>节点 ${i + 1}</strong>（下方白线）：敲击后第 ${at - t0 + 1} 步反应最强，约 ${last - t0 + 1} 步后平息。有 ${D.inIdx[i].length} 个节点连向它，它又连向 ${D.outIdx[i].length} 个，池中箭头指向接收方。</p>`;
+      if (S.selSeen.size >= 2 || S.rewired) h += `<p>这些连线是随机生成的，训练时一条也不改。储备池的用处，就是把一条输入摊开成许多条各不相同的曲线，留给后面挑着用。</p>`;
+      else h += `<p class="empty">再点一个别的节点比一比。</p>`;
+    }
+  } else if (k === "readout") {
+    if (!D.fit) h = `<p class="empty">还没有读出，所以“输出”一行只有实际信号（灰线），没有预测。</p>`;
+    else {
+      head = `<p class="big wide"><span>比“原地不动”的猜法准</span><span class="n"><b>${times(D.fit.baseline / Math.max(D.fit.rmse, 1e-9))}</b> 倍</span></p>`;
+      h = `<p>一次求解就完成，没有反复迭代。留出段误差 ${fmt(D.fit.rmse, 3)}；只猜“${H} 步后和现在一样”的话是 ${fmt(D.fit.baseline, 3)}。</p>
+        <p>池子右边的两根柱子是这一刻的算账：左柱把正向贡献往上累加，右柱用负向贡献往回抵消，落点就是预测。多数贡献互相抵消，这就是“线性组合”。</p>
+        <div class="sum" id="sum"></div>
+        <p>训练 ESN 就是求这 ${D.n + 2} 个音量，池子里的连线一条没动。电子毛笔的运动预测也是这样：根据刚才的动作，提前 50 毫秒给出下一段。</p>`;
+    }
+  } else if (k === "knobs" || k === "free") {
+    for (const kk of ["rho", "leak", "gain"]) { const el = $("val-" + kk); if (el) el.textContent = fmt(S.p[kk]); }
+    if (e) {
+      const was = S.ghost && (S.ghost.len !== e.len || S.ghost.status !== e.status) ? `<span class="was">改动前 ${echoShort(S.ghost)}</span>` : "";
+      head = `<p class="big"><span>余波持续</span>${echoLine(e)}${was}</p>`;
+      if (!e.settled) h += echoCaveat(e);
+      else if (e.len <= 9) h += `<p>余波很短：池子几乎只记得眼前这一下，更早的输入已经没有痕迹。</p>`;
+      else if (D.sat >= D.n * 0.2) h += `<p>有 ${D.sat} 个节点顶到了上限（±1，池中带白圈）。再大的输入它们也只能这么亮，大小差别被抹平了。</p>`;
+      else if (S.p.leak <= 0.15) h += `<p>节点变得迟钝：每一步只挪一点点，所以余波又低又长。</p>`;
+      else if (k === "knobs") h += `<p>余波够长，又能平息：池子记得住最近一段输入，也不会自己闹起来。</p>`;
+    }
+    if (k === "free") {
+      if (D.fit) {
+        const ratio = D.fit.baseline / Math.max(D.fit.rmse, 1e-9);
+        h += `<p>提前 ${H} 步预测：留出段误差 ${fmt(D.fit.rmse, 3)}，“原地不动”的猜法是 ${fmt(D.fit.baseline, 3)}` +
+             (ratio >= 1.15 ? `，好了约 ${times(ratio)} 倍。` : `。这一次读出没有比它好：试着把回声调长一些，或者换一条更有规律的输入。`) + `</p><div class="sum" id="sum"></div>`;
+      } else h += `<p class="empty">敲击输入没有可预测的规律，所以这里不训练读出。换成波浪、变频、台阶或手绘试试。</p>`;
+    }
+  } else if (k === "run") {
+    if (e && e.peak > 1e-9) {
+      head = `<p class="big"><span>这个模型的回声</span>${echoLine(e)}</p>`;
+      h += e.settled ? `<p>对它敲一下（一次标准化的输入脉冲），余波约 ${e.len} 步后降到峰值的 5% 以下。它能利用的“最近的过去”大致就是这么长。</p>` : echoCaveat(e);
+      if (e.legacy && !e.settled) h += `<p class="hint">这条实验的数据只带了 ${e.window} 步脉冲响应；用 V0.7.1 的服务重新读取会得到更长的观察窗口。</p>`;
+    }
+    if (D.legacyUnbounded) h += `<p class="hint">旧版电子毛笔轨迹缺少独立录制边界。已停用跨帧曲线和预测连线，避免展示虚假的连续动作。请用当前版本重新训练。</p>`;
+    else if (D.hasEpisodes) h += `<p>每份录制都重新初始化储备池，竖向虚线表示独立录制的边界；播放到边界会停下。每段预热预测都保留空白，跨边界的预测一律不画。</p>`;
+    if (!D.legacyUnbounded)
+      h += `<p>“输出”一行：灰线是实际值，绿线是预测，画在同一录制的目标时刻（输入后 ${D.horizon} 步）。池子右边两根柱子显示当前输入状态的读出分解：</p><div class="sum" id="sum"></div>`;
+  }
+  if ($("head")) $("head").innerHTML = head; else h = head + h;
+  o.innerHTML = h;
+  updateSum(true);
+  drawMini();
+}
+
+$("story").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b || b.disabled) return;
+  const d = b.dataset;
+  if (d.go != null) goto(+d.go);
+  else if (d.act === "poke") poke();
+  else if (d.act === "train") train(true);
+  else if (d.act === "untrain") train(false);
+  else if (d.act === "rewire") { setNet(S.netIndex + 1); if (S.chapter === 1) markDone(1, "换了一组随机连线"); }
+  else if (d.act === "reset") { S.p = { ...DEFAULTS }; S.ghost = null; compute(); renderStory(); }
+  else if (d.act === "workbench") host("workbench");
+  else if (d.preset) {
+    snapshotGhost();
+    S.p = { forget: { rho: 0.3, leak: 0.6, gain: 0.85 }, default: { ...DEFAULTS }, slow: { rho: 0.9, leak: 0.1, gain: 0.85 }, wild: { rho: 1.55, leak: 0.5, gain: 0.85 } }[d.preset];
+    document.querySelectorAll("[data-knob]").forEach(el => { el.value = S.p[el.dataset.knob]; });
+    compute(); updateObs(); markDone(3, knobWords());
+  }
+  else if (d.input) setInput(d.input);
+  else if (d.show) { S.show[d.show] = !S.show[d.show]; b.setAttribute("aria-pressed", S.show[d.show]); dirty = true; if (!isRun()) markDone(4, "切换了连线显示"); }
+  else if (d.mode) { S.freeMode = d.mode; renderStory(); dirty = staticDirty = true; }
+});
+function snapshotGhost() { if (D && D.echo) S.ghost = { d: D.echo.d, t0: D.echo.t0, len: D.echo.len, settled: D.echo.settled, peak: D.echo.peak, status: D.echo.status }; }
+$("story").addEventListener("pointerdown", e => { if (e.target.matches("[data-knob]")) snapshotGhost(); });
+$("story").addEventListener("keydown", e => { if (e.target.matches("[data-knob]") && !e.repeat) snapshotGhost(); });
+$("story").addEventListener("input", e => { const k = e.target.dataset.knob; if (k) setParam(k, +e.target.value); });
+
+/* ---------- canvases ---------- */
+function fit(canvas) {
+  const r = canvas.getBoundingClientRect(), dpr = Math.min(2.5, window.devicePixelRatio || 1);
+  const w = Math.max(10, Math.round(r.width)), h = Math.max(10, Math.round(r.height));
+  if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) { canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr); }
+  const c = canvas.getContext("2d"); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { c, w, h, dpr };
+}
+
+/* mini echo chart in the story column */
+function drawMini() {
+  const cv = $("mini"); if (!cv) return;
+  const e = D && D.echo;
+  cv.style.display = e && e.peak > 1e-9 ? "block" : "none";
+  if (!e || e.peak < 1e-9) return;
+  const { c, w, h } = fit(cv); c.clearRect(0, 0, w, h);
+  const g = S.ghost && (S.chapter === 3 || S.chapter === 4) ? S.ghost : null;
+  const want = Math.max(e.status === "decayed" ? e.len : 1e9, g ? (g.status === "decayed" ? g.len : 1e9) : 0);
+  const span = Math.max(2, Math.min(e.d.length - e.t0, D.kind === "run" ? e.d.length : Math.max(60, Math.ceil((want * 1.7) / 20) * 20))), top = 16, bot = h - 15, L = 2, R = w - 2;
+  const ymax = Math.max(e.peak, g ? g.peak : 0) * 1.08;
+  const xo = k => L + (k / (span - 1)) * (R - L), yo = v => bot - (v / ymax) * (bot - top);
+  c.font = `11.5px ${C.font}`; c.textBaseline = "alphabetic";
+  c.strokeStyle = C.rule; c.lineWidth = 1; c.beginPath(); c.moveTo(L, bot + .5); c.lineTo(R, bot + .5); c.stroke();
+  const curve = (d, t0, color, width, dash) => {
+    c.beginPath(); for (let k = 0; k < span && t0 + k < d.length; k++) { const x = xo(k), y = yo(d[t0 + k]); k ? c.lineTo(x, y) : c.moveTo(x, y); }
+    c.strokeStyle = color; c.lineWidth = width; c.setLineDash(dash || []); c.lineJoin = "round"; c.stroke(); c.setLineDash([]);
+  };
+  if (g) curve(g.d, g.t0, C.ink3, 1.3, [4, 3]);
+  c.beginPath(); c.moveTo(xo(0), bot);
+  for (let k = 0; k < span && e.t0 + k < e.d.length; k++) c.lineTo(xo(k), yo(e.d[e.t0 + k]));
+  c.lineTo(xo(Math.min(span, e.d.length - e.t0) - 1), bot); c.closePath(); c.globalAlpha = 0.10; c.fillStyle = C.ink; c.fill(); c.globalAlpha = 1;
+  curve(e.d, e.t0, C.ink, 1.8);
+  if (e.status === "decayed" && e.len < span) {
+    const x = xo(e.len); c.strokeStyle = C.ink; c.lineWidth = 1; c.beginPath(); c.moveTo(x + .5, bot - 10); c.lineTo(x + .5, bot + 4); c.stroke();
+    c.fillStyle = C.ink; c.textAlign = x > R - 44 ? "right" : "center"; c.fillText(`${e.len}`, x > R - 44 ? R : x, h - 2);
+  }
+  c.fillStyle = C.ink3; c.textAlign = "left"; c.fillText("余波强度", L, 11);
+  if (!(e.status === "decayed" && xo(e.len) > R - 90)) { c.textAlign = "right"; c.fillText(`${span} 步`, R, h - 2); }
+  c.textAlign = "left"; c.fillText("敲击", L, h - 2);
+}
+
+/* ---------- pond ---------- */
+let geo = null;
+function drawPond() {
+  const { c, w, h } = fit($("pond")); c.clearRect(0, 0, w, h);
+  const n = D.n, run = D.kind === "run", ch = S.chapter;
+  const hasOut = !!(D.outTruth && tracksShown().includes("out"));
+  const showRead = !!(D.parts && D.fit && D.fit.nodes && (run || ch === 4 ? S.show.readLines : ch === 2));
+  const sideL = Math.max(52, Math.min(92, w * 0.13)), sideR = hasOut ? Math.max(sideL, 96) : sideL;
+  const R = Math.max(50, Math.min(h / 2 - 26, (w - sideL - sideR) / 2 - 6)), cx = (w + sideL - sideR) / 2, cy = h / 2 - 6;
+  const spacing = (1.7 / Math.sqrt(n)) * R * 0.9, r0 = Math.max(2.2, Math.min(16, spacing * 0.3));
+  const t = Math.max(0, Math.min(D.T - 1, S.pos)), i0 = Math.floor(t);
+  // A state reset is a discontinuity, never an interpolated motion between nodes.
+  const crossing = D.episodeBoundaries && D.episodeBoundaries[i0 + 1];
+  const i1 = (crossing || D.legacyUnbounded) ? i0 : Math.min(D.T - 1, i0 + 1), f = i1 === i0 ? 0 : t - i0;
+  const lerp = a => a[i0] * (1 - f) + a[i1] * f;
+  const x = new Float64Array(n), sx = new Float64Array(n), sy = new Float64Array(n);
+  for (let i = 0; i < n; i++) {
+    x[i] = D.X[i0 * n + i] * (1 - f) + D.X[i1 * n + i] * f;
+    sx[i] = cx + D.pos[i][0] * R * 0.9; sy[i] = cy + D.pos[i][1] * R * 0.9;
+  }
+  geo = { sx, sy, r0, R, cx, cy, x };
+  const ut = lerp(D.u), um = D.uModel ? lerp(D.uModel) : NaN, gh = Math.min(R * 0.55, 74);   // ut: drawn position; um: what the model receives
+  const inX = cx - R - sideL * 0.52, outX = hasOut ? cx + R + sideR - 22 : cx + R + sideR * 0.52;
+  const beadY = cy - Math.max(-1, Math.min(1, isFinite(ut) ? ut : 0)) * gh;
+
+  // the pool itself
+  const bg = c.createRadialGradient(cx - R * 0.25, cy - R * 0.3, R * 0.1, cx, cy, R);
+  bg.addColorStop(0, C.pond0); bg.addColorStop(1, C.pond1);
+  c.beginPath(); c.arc(cx, cy, R, 0, 7); c.fillStyle = bg; c.fill();
+  c.lineWidth = 1.5; c.strokeStyle = C["pond-rim"]; c.stroke();
+
+  const showIn = D.win && isFinite(um) && (run || ch === 4 ? S.show.inLines : true);
+  const showAll = (run || ch === 4) && S.show.edges;
+  const grow = showRead ? fxProgress("train", 900) : 1;       // readout appears as a visible event when it is trained
+
+  c.save(); c.beginPath(); c.arc(cx, cy, R - 1, 0, 7); c.clip();
+  // input lines: brightness is the real drive |W_in,i * u_model(t)| in pre-activation units
+  if (showIn && Math.abs(um) > 0.015) {
+    c.strokeStyle = C["in-g"]; c.lineCap = "round";
+    for (let i = 0; i < n; i++) {
+      const a = Math.min(1, Math.abs(D.win[i] * D.gain * um));
+      if (a < 0.03) continue;
+      c.globalAlpha = 0.08 + 0.5 * a; c.lineWidth = 0.6 + 1.3 * a;
+      c.beginPath(); c.moveTo(inX + 8, beadY); c.lineTo(sx[i], sy[i]); c.stroke();
+    }
+    c.globalAlpha = 1;
+  }
+  // recurrent connections, lit by what the source node sends right now: |W_ij * x_j(t)|, same scale for every model
+  if (showAll) {
+    const m = Math.min(D.src.length, run ? 420 : 900);     // real runs arrive strongest first; capped so the pool stays readable
+    for (let k = 0; k < m; k++) {
+      const a = D.src[k], b = D.dst[k], drive = Math.min(1, Math.abs(D.w[k] * D.rho * x[a]) * 2.2);
+      c.globalAlpha = 0.05 + 0.6 * drive; c.lineWidth = 0.5 + 1.2 * drive;
+      c.strokeStyle = D.w[k] >= 0 ? C["pos-g"] : C["neg-g"];
+      c.beginPath(); c.moveTo(sx[a], sy[a]); c.lineTo(sx[b], sy[b]); c.stroke();
+    }
+    c.globalAlpha = 1;
+  }
+  // readout lines: each node's signed contribution w_i * x_i(t); blue adds, red subtracts
+  const sinkX = outX - 34;
+  if (showRead) {
+    c.lineCap = "round";
+    for (let i = 0; i < n; i++) {
+      const v = D.fit.nodes[i] * x[i], a = Math.min(1, Math.abs(v) / (D.fit.cmax || 1));
+      if (a < 0.03) continue;
+      c.strokeStyle = v >= 0 ? C["pos-g"] : C["neg-g"];
+      c.globalAlpha = (0.07 + 0.55 * a) * Math.min(1, grow * 1.5); c.lineWidth = 0.6 + 1.6 * a;
+      c.beginPath(); c.moveTo(sx[i], sy[i]); c.lineTo(sx[i] + (sinkX - sx[i]) * grow, sy[i] + (cy - sy[i]) * grow); c.stroke();
+    }
+    c.globalAlpha = 1;
+  }
+  c.restore();
+
+  // wiring of the selected node, in model units
+  if (S.sel >= 0 && S.sel < n) {
+    const s = S.sel;
+    for (let k = 0; k < D.src.length; k++) {
+      const a = D.src[k], b = D.dst[k]; if (a !== s && b !== s) continue;
+      const wk = Math.min(1, Math.abs(D.w[k] * D.rho) * 0.9), incoming = b === s;
+      c.strokeStyle = c.fillStyle = D.w[k] >= 0 ? C["pos-g"] : C["neg-g"];
+      c.globalAlpha = incoming ? 0.95 : 0.5; c.lineWidth = 0.8 + 2.2 * wk;
+      const dx = sx[b] - sx[a], dy = sy[b] - sy[a], len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
+      const ex = sx[b] - ux * (r0 + 4), ey = sy[b] - uy * (r0 + 4);
+      c.beginPath(); c.moveTo(sx[a] + ux * r0, sy[a] + uy * r0); c.lineTo(ex, ey); c.stroke();
+      const ah = 6 + 2 * wk; c.beginPath(); c.moveTo(ex + ux * 2, ey + uy * 2);
+      c.lineTo(ex - ux * ah - uy * ah * 0.55, ey - uy * ah + ux * ah * 0.55); c.lineTo(ex - ux * ah + uy * ah * 0.55, ey - uy * ah - ux * ah * 0.55); c.closePath(); c.fill();
+    }
+    c.globalAlpha = 1;
+  }
+
+  // nodes: colour = sign of the state, brightness and size = strength
+  const order = Array.from({ length: n }, (_, i) => i).sort((a, b) => Math.abs(x[a]) - Math.abs(x[b]));
+  for (const i of order) {
+    const a = glow(x[i]), col = mix(C.rgb["pond-dim"], x[i] >= 0 ? C.rgb["pos-g"] : C.rgb["neg-g"], a), r = r0 * (0.62 + 0.58 * a);
+    c.shadowColor = rgb(col, 0.95); c.shadowBlur = n > 150 ? 0 : 22 * a;
+    c.beginPath(); c.arc(sx[i], sy[i], r, 0, 7); c.fillStyle = rgb(col); c.fill();
+    c.shadowBlur = 0;
+    if (Math.abs(x[i]) >= 0.97) { c.beginPath(); c.arc(sx[i], sy[i], r + 2.5, 0, 7); c.strokeStyle = "#fff"; c.lineWidth = 1.2; c.stroke(); }
+  }
+  for (const [i, alpha] of [[S.hover, 0.55], [S.sel, 1]]) {
+    if (i < 0 || i >= n) continue;
+    c.beginPath(); c.arc(sx[i], sy[i], r0 * 1.12 + 4, 0, 7); c.strokeStyle = `rgba(255,255,255,${alpha})`; c.lineWidth = 1.6; c.stroke();
+  }
+
+  // ports: the outside world sits outside the pool
+  c.font = `12px ${C.font}`; c.textAlign = "center"; c.textBaseline = "alphabetic";
+  const gauge = (gx, label, color, half) => {
+    c.strokeStyle = C.rule; c.lineWidth = 2; c.lineCap = "round";
+    c.beginPath(); c.moveTo(gx, cy - half); c.lineTo(gx, cy + half); c.stroke();
+    c.lineWidth = 1; c.beginPath(); c.moveTo(gx - 5, cy + .5); c.lineTo(gx + 5, cy + .5); c.stroke();
+    c.fillStyle = color; c.fillText(label, gx, cy + half + 20);
+  };
+  gauge(inX, "输入", C.in, gh);
+  if (isFinite(ut)) {
+    c.beginPath(); c.arc(inX, beadY, 7, 0, 7); c.fillStyle = C.in; c.fill();
+    const flash = fxProgress("poke", 450);                    // a poke is marked at the port, never as a ripple inside the pool
+    if (flash < 1) { c.beginPath(); c.arc(inX, beadY, 7 + 18 * flash, 0, 7); c.strokeStyle = C.in; c.globalAlpha = 1 - flash; c.lineWidth = 2; c.stroke(); c.globalAlpha = 1; }
+  }
+  arrow(c, inX + 14, cy, cx - R - 5, cy);
+  if (hasOut) {
+    gauge(outX, "输出", C.out, gh);
+    const sourceIndex = Math.round(t);
+    const tau = D.outputAtSource ? D.outputAtSource[sourceIndex] : Math.min(D.T - 1, sourceIndex + D.horizon);
+    const yt = tau >= 0 ? D.outTruth[tau] : NaN, yp = D.outPred && tau >= 0 ? D.outPred[tau] : NaN;
+    const predY = cy - Math.max(-1.15, Math.min(1.15, yp)) * gh;
+    if (isFinite(yt)) { c.beginPath(); c.arc(outX, cy - yt * gh, 7, 0, 7); c.strokeStyle = C.ink3; c.lineWidth = 1.5; c.stroke(); }
+    if (showRead) {
+      // Signed sum: left column stacks what pushes the output up, right column takes away what pushes it down.
+      // Where the right column ends is the prediction. One scale for all pieces and all moments.
+      const p = D.parts, i = Math.round(t), sc = ((R * 0.8) / p.ext) * grow, xu = outX - 30, xd = outX - 20, bw = 7;
+      const P = p.P[i], Ng = p.N[i], Dr = p.Dr[i], B = p.bias, hasDr = isFinite(Dr);
+      const bar = (bx, from, val, color, hollow) => {
+        const to = from - val * sc;
+        if (hollow) { c.strokeStyle = color; c.lineWidth = 1; c.strokeRect(bx - bw / 2 + .5, Math.min(from, to) + .5, bw - 1, Math.max(0, Math.abs(to - from) - 1)); }
+        else { c.fillStyle = color; c.fillRect(bx - bw / 2, Math.min(from, to), bw, Math.abs(to - from)); }
+        return to;
+      };
+      c.strokeStyle = C.ink3; c.lineWidth = 1; c.beginPath(); c.moveTo(xu - 7, cy + .5); c.lineTo(xd + 7, cy + .5); c.stroke();
+      let y = bar(xu, cy, P, C.pos);
+      if (hasDr && Dr > 0) y = bar(xu, y, Dr, C.in, p.inferred);
+      if (B > 0) y = bar(xu, y, B, C.ink3);
+      c.beginPath(); c.moveTo(xu, Math.round(y) + .5); c.lineTo(xd, Math.round(y) + .5); c.strokeStyle = C.ink3; c.stroke();
+      y = bar(xd, y, Ng, C.neg);
+      if (hasDr && Dr < 0) y = bar(xd, y, Dr, C.in, p.inferred);
+      if (B < 0) y = bar(xd, y, B, C.ink3);
+      // the end of the right column is the prediction; a thin lead ties it to the output bead
+      c.strokeStyle = C.out; c.lineWidth = 2; c.beginPath(); c.moveTo(xd - 6, y); c.lineTo(xd + 6, y); c.stroke();
+      if (isFinite(yp)) { c.lineWidth = 1; c.globalAlpha = 0.7; c.beginPath(); c.moveTo(xd + 6, y); c.lineTo(outX - 6, predY); c.stroke(); c.globalAlpha = 1; }
+      arrow(c, cx + R + 4, cy, xu - 9, cy);
+      // the direct input term does not pass through the pool: it travels over it
+      if (hasDr && !p.inferred) {
+        const a = Math.min(1, Math.abs(Dr) / p.ext), top = cy - R - 34, endY = cy - R * 0.8 - 8;
+        c.strokeStyle = c.fillStyle = C.in; c.globalAlpha = (0.3 + 0.7 * a) * grow; c.lineWidth = 1 + 1.2 * a;
+        c.beginPath(); c.moveTo(inX, cy - gh - 8); c.bezierCurveTo(inX, top, xu, top, xu, endY); c.stroke();
+        c.beginPath(); c.moveTo(xu, endY + 6); c.lineTo(xu - 4, endY - 2); c.lineTo(xu + 4, endY - 2); c.closePath(); c.fill();
+        c.globalAlpha = 1;
+      }
+    } else arrow(c, cx + R + 5, cy, outX - 14, cy);
+    if (isFinite(yp)) { c.beginPath(); c.arc(outX, predY, 5, 0, 7); c.fillStyle = C.out; c.fill(); }
+  }
+}
+function arrow(c, x0, y0, x1, y1) {
+  c.strokeStyle = C.ink3; c.fillStyle = C.ink3; c.lineWidth = 1.2;
+  c.beginPath(); c.moveTo(x0, y0 + .5); c.lineTo(x1 - 5, y1 + .5); c.stroke();
+  c.beginPath(); c.moveTo(x1, y1 + .5); c.lineTo(x1 - 7, y1 - 3.5); c.lineTo(x1 - 7, y1 + 4.5); c.closePath(); c.fill();
+}
+function renderLegend() {
+  const hasOut = D && D.outTruth && tracksShown().includes("out"), sq = col => `<i style="background:${col};border-radius:2px"></i>`;
+  const read = D && D.parts && D.fit && D.fit.nodes && (D.kind === "run" || S.chapter === 4 ? S.show.readLines : S.chapter === 2);
+  $("legend").innerHTML = `<span><i style="background:${C["pos-g"]}"></i>正</span><span><i style="background:${C["neg-g"]}"></i>负</span><span>越亮越强</span>` +
+    (hasOut ? `<span><i style="background:none;border:1.5px solid ${C.ink3}"></i>实际</span><span><i style="background:${C.out}"></i>预测</span>` : "") +
+    (read ? `<span>${sq(C.in)}输入直连</span><span>${sq(C.ink3)}基准</span>` : "");
+  const act = $("stageAct"), k = isRun() ? "" : CH[S.chapter].key;
+  const label = k === "poke" ? "敲一下" : k === "readout" && !S.trained ? "训练读出" : "";
+  act.hidden = !label; act.textContent = label; act.dataset.act = k === "poke" ? "poke" : "train";
+}
+$("stageAct").addEventListener("click", e => { if (e.currentTarget.dataset.act === "poke") poke(); else train(true); });
+function nodeAt(e) {
+  if (!geo) return -1;
+  const r = $("pond").getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
+  let best = -1, bd = (geo.r0 + 9) ** 2;
+  for (let i = 0; i < D.n; i++) { const d = (geo.sx[i] - px) ** 2 + (geo.sy[i] - py) ** 2; if (d < bd) { bd = d; best = i; } }
+  return best;
+}
+$("pond").addEventListener("pointermove", e => {
+  const i = nodeAt(e); if (i !== S.hover) { S.hover = i; dirty = true; }
+  $("pond").style.cursor = i >= 0 ? "pointer" : "default";
+  const tip = $("tip");
+  if (i >= 0) { tip.style.display = "block"; tip.style.left = geo.sx[i] + "px"; tip.style.top = geo.sy[i] + "px"; tip.textContent = `节点 ${i + 1}　${geo.x[i] >= 0 ? "+" : "−"}${Math.abs(geo.x[i]).toFixed(2)}`; }
+  else tip.style.display = "none";
+});
+$("pond").addEventListener("pointerleave", () => { S.hover = -1; $("tip").style.display = "none"; dirty = true; });
+$("pond").addEventListener("click", e => { const i = nodeAt(e); select(i === S.sel ? -1 : i); });
+$("nodechipClose").addEventListener("click", () => select(-1));
+$("pond").addEventListener("keydown", e => {
+  if (!geo) return;
+  const dir = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+  if (dir) {
+    let best = -1, score = Infinity;
+    const from = S.sel >= 0 ? S.sel : -1, fx = from >= 0 ? geo.sx[from] : geo.cx - dir[0] * geo.R, fy = from >= 0 ? geo.sy[from] : geo.cy - dir[1] * geo.R;
+    for (let i = 0; i < D.n; i++) {
+      if (i === from) continue;
+      const dx = geo.sx[i] - fx, dy = geo.sy[i] - fy, along = dx * dir[0] + dy * dir[1], across = Math.abs(dx * dir[1] - dy * dir[0]);
+      if (along <= 1) continue;
+      const s = along + 2.2 * across; if (s < score) { score = s; best = i; }
+    }
+    if (best >= 0) select(best);
+    e.preventDefault();
+  } else if (e.key === "Escape" && S.sel >= 0) { select(-1); e.preventDefault(); }
+  else if ((e.key === "Enter" || e.key === " ") && S.sel < 0) { select(0); e.preventDefault(); }
+});
+function updateChip() {
+  const on = S.sel >= 0 && D && S.sel < D.n;
+  $("nodechip").classList.toggle("on", on);
+  if (on) $("nodechipText").textContent = `节点 ${S.sel + 1}　${D.inIdx[S.sel].length} 进 ${D.outIdx[S.sel].length} 出`;
+  $("pond").setAttribute("aria-label", "储备池。方向键在节点之间移动，Esc 取消选中。" + (on ? `当前选中节点 ${S.sel + 1}，有 ${D.inIdx[S.sel].length} 条连入、${D.outIdx[S.sel].length} 条连出。` : "未选中节点。"));
+}
+
+/* ---------- tracks ---------- */
+let TL = { rows: [], w: 0, h: 0 }, staticCv = document.createElement("canvas"), rasterCv = document.createElement("canvas");
+const GUT = 52, PADR = 8;
+function layoutTracks() {
+  const cv = $("tracks"), w = Math.max(200, Math.round(cv.parentElement.getBoundingClientRect().width - 30));
+  const compact = window.innerHeight < 640 && window.innerWidth > 780;
+  const rows = []; let y = 1;
+  const shown = tracksShown(), tight = compact || shown.length > 2;
+  for (const k of shown) { const h = k === "state" ? (tight ? 68 : 78) : (tight ? 46 : 50); rows.push({ k, x: GUT, y, w: w - GUT - PADR, h }); y += h + 7; }
+  TL = { rows, w, h: y + 12 };
+  cv.style.height = TL.h + "px";
+  staticDirty = dirty = true;
+}
+const xOf = (row, t) => row.x + (t / (D.T - 1)) * row.w;
+const yOf = (row, v) => row.y + row.h / 2 - Math.max(-1.12, Math.min(1.12, v)) * (row.h / 2 - 5);
+
+function seriesPath(c, row, arr, from, to) {
+  let down = false; c.beginPath();
+  for (let t = Math.max(0, from); t <= Math.min(arr.length - 1, to); t++) {
+    const v = arr[t]; if (!isFinite(v)) { down = false; continue; }
+    if (D.episodeBoundaries && D.episodeBoundaries[t]) down = false;
+    const x = xOf(row, t), y = yOf(row, v); down ? c.lineTo(x, y) : c.moveTo(x, y); down = true;
+  }
+}
+function roundRect(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+
+function drawStatic(dpr) {
+  staticCv.width = Math.round(TL.w * dpr); staticCv.height = Math.round(TL.h * dpr);
+  const c = staticCv.getContext("2d"); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, TL.w, TL.h);
+  c.font = `12.5px ${C.font}`; c.textBaseline = "middle";
+  const names = { in: "输入", state: "储备池", out: "输出" }, n = D.n, Tn = D.T;
+  for (const row of TL.rows) {
+    c.textAlign = "left"; c.fillStyle = row.k === "in" ? C.in : row.k === "out" ? C.out : C.ink2; c.fillText(names[row.k], 0, row.y + row.h / 2);
+    c.save(); roundRect(c, row.x, row.y, row.w, row.h, 6); c.clip();
+    if (row.k === "state") {
+      const g = c.createLinearGradient(0, row.y, 0, row.y + row.h); g.addColorStop(0, C.pond0); g.addColorStop(1, C.pond1);
+      c.fillStyle = g; c.fillRect(row.x, row.y, row.w, row.h);
+      if (stateMode() === "raster" || D.legacyUnbounded) {
+        rasterCv.width = Tn; rasterCv.height = n; const rc = rasterCv.getContext("2d"), img = rc.createImageData(Tn, n), bgc = mix(C.rgb.pond0, C.rgb.pond1, 0.5);
+        for (let i = 0; i < n; i++) for (let t = 0; t < Tn; t++) {
+          const v = D.X[t * n + i], col = mix(bgc, v >= 0 ? C.rgb["pos-g"] : C.rgb["neg-g"], glow(v)), o = (i * Tn + t) * 4;
+          img.data[o] = col[0]; img.data[o + 1] = col[1]; img.data[o + 2] = col[2]; img.data[o + 3] = 255;
+        }
+        rc.putImageData(img, 0, 0); c.imageSmoothingEnabled = false;
+        const half = row.w / (Tn - 1) / 2;
+        c.drawImage(rasterCv, row.x - half, row.y + 3, row.w + 2 * half, row.h - 6);
+        if (S.sel >= 0 && S.sel < n) { const ry = row.y + 3 + ((S.sel + 0.5) / n) * (row.h - 6); c.fillStyle = "#fff"; c.fillRect(row.x, ry - 0.75, 7, 1.5); c.fillRect(row.x + row.w - 7, ry - 0.75, 7, 1.5); }
+      } else {
+        c.strokeStyle = "rgba(255,255,255,.14)"; c.lineWidth = 1; c.beginPath(); c.moveTo(row.x, row.y + row.h / 2 + .5); c.lineTo(row.x + row.w, row.y + row.h / 2 + .5); c.stroke();
+        c.lineWidth = 1; c.strokeStyle = C["pond-ink"]; c.globalAlpha = n > 120 ? 0.07 : 0.2; c.lineJoin = "round";
+        const stride = Math.max(1, Math.floor(Tn / 600));
+        const k = 1 / D.amp;          // traces fill the row; this strip has no numeric axis
+        for (let i = 0; i < n; i++) { if (i === S.sel) continue; c.beginPath(); let previous = -1; for (let t = 0; t < Tn; t += stride) { const x = xOf(row, t), y = yOf(row, D.X[t * n + i] * k); if (previous < 0 || (D.episodes && D.episodes[t] !== D.episodes[previous])) c.moveTo(x, y); else c.lineTo(x, y); previous = t; } c.stroke(); }
+        c.globalAlpha = 1;
+        if (S.sel >= 0 && S.sel < n) { c.strokeStyle = "#fff"; c.lineWidth = 2.2; c.beginPath(); for (let t = 0; t < Tn; t++) { const x = xOf(row, t), y = yOf(row, D.X[t * n + S.sel] * k); if (!t || (D.episodeBoundaries && D.episodeBoundaries[t])) c.moveTo(x, y); else c.lineTo(x, y); } c.stroke(); }
+      }
+    } else {
+      c.fillStyle = C.surface; c.fillRect(row.x, row.y, row.w, row.h);
+      if (row.k === "out") {
+        c.font = `11.5px ${C.font}`; c.textBaseline = "top";
+        if (D.kind === "run" && D.sourceWashout) {
+        // Washout is per episode: missing source predictions are intentional.
+        const h = D.horizon;
+        for (let i = 0; i < Tn; i++) {
+          if (!D.sourceWashout[i]) continue;
+          const j = D.outputAtSource ? D.outputAtSource[i] : -1;
+          if (j < 0) continue;
+          const xa = xOf(row, Math.max(0, j - .5)), xb = xOf(row, Math.min(Tn - 1, j + .5));
+          c.fillStyle = C.rule; c.globalAlpha = .5; c.fillRect(xa, row.y, Math.max(1, xb - xa), row.h); c.globalAlpha = 1;
+        }
+      } else if (D.washEnd > 0) { c.fillStyle = C.rule; c.globalAlpha = .55; c.fillRect(row.x, row.y, xOf(row, D.washEnd) - row.x, row.h); c.globalAlpha = 1; c.fillStyle = C.ink3; c.textAlign = "left"; if (xOf(row, D.washEnd) - row.x > 30) c.fillText("预热", row.x + 6, row.y + 4); }
+        const mark = (t, label) => { const x = Math.round(xOf(row, t)) + .5; c.strokeStyle = C.ink3; c.lineWidth = 1; c.setLineDash([3, 3]); c.beginPath(); c.moveTo(x, row.y); c.lineTo(x, row.y + row.h); c.stroke(); c.setLineDash([]); c.fillStyle = C.ink3; c.textAlign = "left"; c.fillText(label, x + 5, row.y + 4); };
+        if (D.kind === "sandbox") mark(TRAIN_END, "留出段：没参与训练");
+        else if (D.split) { const nm = ["训练", "验证", "测试"]; for (let t = 1; t < Tn; t++) if (D.split[t] !== D.split[t - 1]) mark(t, nm[D.split[t]] || ""); }
+        c.textBaseline = "middle";
+      }
+      c.strokeStyle = C.rule; c.lineWidth = 1; c.beginPath(); c.moveTo(row.x, row.y + row.h / 2 + .5); c.lineTo(row.x + row.w, row.y + row.h / 2 + .5); c.stroke();
+      if (row.k === "in" && !D.legacyUnbounded) { seriesPath(c, row, D.u, 0, Tn - 1); c.strokeStyle = C.in; c.lineWidth = 2; c.lineJoin = "round"; c.stroke(); }
+      if (row.k === "out" && D.outTruth && !D.legacyUnbounded) { seriesPath(c, row, D.outTruth, 0, Tn - 1); c.strokeStyle = C.ink3; c.lineWidth = 1.2; c.setLineDash([2, 3]); c.stroke(); c.setLineDash([]); }
+    }
+    c.restore();
+    if (D.episodeBoundaries) for (let t = 1; t < Tn; t++) if (D.episodeBoundaries[t]) {
+      const x = Math.round(xOf(row, t)) + .5;
+      c.strokeStyle = C.ink3; c.lineWidth = 1; c.setLineDash([4, 4]);
+      c.beginPath(); c.moveTo(x, row.y); c.lineTo(x, row.y + row.h); c.stroke(); c.setLineDash([]);
+      if (row.k === "out") { c.font = `11px ${C.font}`; c.textAlign = "left";
+        c.fillStyle = C.ink2; c.fillText("新录制 · 状态重置", Math.min(x + 4, row.x + row.w - 102), row.y + 11); }
+    }
+    if (D.legacyUnbounded && row.k === "out") {
+      c.font = `12px ${C.font}`; c.fillStyle = C.ink3; c.textAlign = "center";
+      c.fillText("旧实验缺少录制边界：已隐藏预测，重新训练后可查看", row.x + row.w / 2, row.y + row.h / 2);
+    }
+  }
+  // time ticks under the last row
+  const last = TL.rows[TL.rows.length - 1];
+  if (last) {
+    c.font = `11px ${C.font}`; c.fillStyle = C.ink3; c.textBaseline = "top";
+    const stepT = Tn <= 150 ? 30 : Tn <= 300 ? 60 : Tn <= 700 ? 100 : 200;
+    for (let t = 0; t < Tn; t += stepT) { c.textAlign = t === 0 ? "left" : "center"; c.fillText(String(D.tStart + t), xOf(last, t), last.y + last.h + 3); }
+  }
+}
+
+let hoverT = -1;
+function drawTracks() {
+  const cv = $("tracks"), { c, w, h, dpr } = fit(cv);
+  if (w !== TL.w) { layoutTracks(); return drawTracks(); }
+  if (staticDirty) { drawStatic(dpr); staticDirty = false; }
+  c.clearRect(0, 0, w, h);
+  c.drawImage(staticCv, 0, 0, TL.w, TL.h);
+  const t = S.pos;
+  for (const row of TL.rows) {
+    if (row.k === "out" && D.outTruth) {
+      c.save(); roundRect(c, row.x, row.y, row.w, row.h, 6); c.clip();
+      seriesPath(c, row, D.outTruth, 0, Math.floor(t)); c.strokeStyle = C.ink2; c.lineWidth = 1.6; c.lineJoin = "round"; c.stroke();
+      if (D.outPred) {
+        const tip = D.outputAtSource ? D.outputAtSource[Math.round(t)] : Math.min(D.T - 1, Math.floor(t) + D.horizon);
+        c.globalAlpha = 0.28; seriesPath(c, row, D.outPred, tip, D.T - 1); c.strokeStyle = C.out; c.lineWidth = 1.6; c.stroke(); c.globalAlpha = 1;
+        seriesPath(c, row, D.outPred, 0, tip); c.strokeStyle = C.out; c.lineWidth = 2.2; c.stroke();
+        if (tip >= 0 && isFinite(D.outPred[tip])) {
+          const x = xOf(row, tip), y = yOf(row, D.outPred[tip]);
+          c.beginPath(); c.arc(x, y, 3.6, 0, 7); c.fillStyle = C.out; c.fill();
+          const x0 = xOf(row, t); c.strokeStyle = C.out; c.lineWidth = 1; c.beginPath(); c.moveTo(x0, row.y + row.h - 5.5); c.lineTo(x, row.y + row.h - 5.5); c.stroke();
+          c.font = `11px ${C.font}`; c.fillStyle = C.out; c.textBaseline = "alphabetic"; c.textAlign = "left";
+          if (x + 60 < row.x + row.w) c.fillText(`预测 ${D.horizon} 步后`, x + 5, row.y + row.h - 3);
+        }
+      } else if (D.kind === "sandbox") {
+        c.font = `12px ${C.font}`; c.fillStyle = C.ink3; c.textAlign = "center"; c.textBaseline = "alphabetic"; c.fillText("还没有预测", row.x + row.w / 2, row.y + row.h - 6);
+      }
+      c.restore();
+    }
+    if (row.k === "in" && isRun()) {
+      c.font = `11.5px ${C.font}`; c.fillStyle = C.ink3; c.textBaseline = "top"; c.textAlign = "right";
+      c.fillText(D.uModel ? "标准化后的输入，中线＝训练均值" : `${D.inputs} 路输入的幅值摘要，不是模型输入本身`, row.x + row.w - 7, row.y + 4);
+    }
+    if (row.k === "in" && !isRun()) {
+      c.font = `11.5px ${C.font}`; c.fillStyle = C.ink3; c.textBaseline = "top"; c.textAlign = "right";
+      if (S.inputKind === "poke") c.fillText("点这一行可以敲", row.x + row.w - 7, row.y + 4);
+      if (S.inputKind === "draw") c.fillText("按住拖动来画", row.x + row.w - 7, row.y + 4);
+      if (S.inputKind === "poke" && hoverT >= 0) { const x = Math.round(xOf(row, hoverT)) + .5; c.strokeStyle = C.in; c.lineWidth = 1; c.setLineDash([2, 2]); c.beginPath(); c.moveTo(x, row.y + 3); c.lineTo(x, row.y + row.h - 3); c.stroke(); c.setLineDash([]); }
+    }
+  }
+  if (TL.rows.length) {
+    const a = TL.rows[0], b = TL.rows[TL.rows.length - 1], x = Math.round(xOf(a, t)) + .5;
+    c.strokeStyle = C.ink; c.lineWidth = 1; c.beginPath(); c.moveTo(x, a.y - 1); c.lineTo(x, b.y + b.h + 1); c.stroke();
+    for (const row of TL.rows) if (row.k === "state") { c.strokeStyle = "rgba(255,255,255,.85)"; c.beginPath(); c.moveTo(x, row.y); c.lineTo(x, row.y + row.h); c.stroke(); }
+  }
+  cv.setAttribute("aria-valuenow", Math.round(t)); cv.setAttribute("aria-valuemax", D.T - 1); cv.setAttribute("aria-valuemin", 0);
+}
+function hitTrack(e) {
+  const r = $("tracks").getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
+  const row = TL.rows.find(q => py >= q.y - 3 && py <= q.y + q.h + 3) || null;
+  const ref = row || TL.rows[0];
+  const t = ref ? Math.max(0, Math.min(D.T - 1, Math.round(((px - ref.x) / ref.w) * (D.T - 1)))) : 0;
+  return { row, t, py };
+}
+let drag = null;
+function sketch(e) {
+  const { t, py } = hitTrack(e), row = TL.rows.find(q => q.k === "in");
+  const v = Math.max(-1, Math.min(1, (row.y + row.h / 2 - py) / (row.h / 2 - 5)));
+  const a = drag.last == null ? t : drag.last, lo = Math.min(a, t), hi = Math.max(a, t), va = drag.lastV == null ? v : drag.lastV;
+  for (let k = lo; k <= hi; k++) S.drawn[k] = hi === lo ? v : (a < t ? va + (v - va) * (k - lo) / (hi - lo) : v + (va - v) * (k - lo) / (hi - lo));
+  drag.last = t; drag.lastV = v; compute(); updateObs();
+}
+$("tracks").addEventListener("pointerdown", e => {
+  const { row, t } = hitTrack(e); if (!row) return;
+  $("tracks").setPointerCapture(e.pointerId);
+  if (row.k === "in" && !isRun() && S.inputKind === "poke") { poke(t); return; }
+  if (row.k === "in" && !isRun() && S.inputKind === "draw") { drag = { kind: "draw" }; sketch(e); markDone(4, "手绘了一条输入"); return; }
+  drag = { kind: "scrub" }; S.playing = false; S.pos = t; dirty = true; renderTransport();
+});
+$("tracks").addEventListener("pointermove", e => {
+  const { row, t } = hitTrack(e);
+  if (drag && drag.kind === "draw") return sketch(e);
+  if (drag && drag.kind === "scrub") { S.pos = t; dirty = true; renderTransport(); return; }
+  const canPoke = row && row.k === "in" && !isRun() && S.inputKind === "poke", nt = canPoke ? t : -1;
+  if (nt !== hoverT) { hoverT = nt; dirty = true; }
+  $("tracks").style.cursor = canPoke ? "pointer" : row && row.k === "in" && S.inputKind === "draw" && !isRun() ? "crosshair" : row ? "ew-resize" : "default";
+});
+const endDrag = () => { drag = null; };
+$("tracks").addEventListener("pointerup", endDrag); $("tracks").addEventListener("pointercancel", endDrag);
+$("tracks").addEventListener("pointerleave", () => { if (hoverT >= 0) { hoverT = -1; dirty = true; } });
+$("tracks").addEventListener("keydown", e => {
+  const stepBy = d => { S.playing = false; S.pos = Math.max(0, Math.min(D.T - 1, Math.round(S.pos) + d)); dirty = true; renderTransport(); e.preventDefault(); };
+  if (e.key === "ArrowLeft") stepBy(e.shiftKey ? -10 : -1);
+  else if (e.key === "ArrowRight") stepBy(e.shiftKey ? 10 : 1);
+  else if (e.key === "Home") stepBy(-1e6);
+  else if (e.key === "End") stepBy(1e6);
+  else if (e.key === " ") { togglePlay(); e.preventDefault(); }
+});
+
+/* ---------- transport ---------- */
+const ICON = { play: '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11l9.5-5.5z"/></svg>', pause: '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 1.5h3.2v11H2.5zM8.3 1.5h3.2v11H8.3z"/></svg>' };
+function togglePlay() { if (!S.playing && S.pos >= D.T - 1) S.pos = 0; S.playing = !S.playing; renderTransport(); dirty = true; }
+let lastClock = "", lastPlay = null;
+function renderTransport() {
+  if (lastPlay !== S.playing) { $("play").innerHTML = S.playing ? ICON.pause : ICON.play; $("play").setAttribute("aria-label", S.playing ? "暂停" : "播放"); lastPlay = S.playing; }
+  let seg = "";
+  if (isRun() && D.split) seg = "（" + ((SEG.find(q => q[0] === segmentAt(S.pos)) || ["", ""])[1]) + "）";
+  const i = Math.max(0, Math.min(D.T - 1, Math.round(S.pos)));
+  const episodeText = isRun() && D.hasEpisodes ? ` · 录制片段 ${D.episodes[i] + 1} · 本段输入第 ${D.localSteps[i]} 步 → 目标第 ${D.localSteps[i] + D.horizon} 步` : "";
+  const text = `第 ${D.tStart + i} 帧 / 共 ${isRun() ? D.total : D.T} 帧${seg}${episodeText}`;
+  if (text !== lastClock) { $("clock").textContent = text; lastClock = text; }
+  if (segmentAt(S.pos) !== shownSegment) renderSegments();          // button, label and playhead always agree
+}
+function renderSpeed() {
+  $("speed").innerHTML = [0.5, 1, 2, 4].map(v => `<button type="button" data-speed="${v}" aria-pressed="${S.speed === v}">${v}×</button>`).join("");
+}
+const SEG = [["train", "训练段", 0], ["validation", "验证段", 1], ["test", "测试段", 2]];
+const segmentAt = t => (isRun() && D.split ? (SEG[D.split[Math.max(0, Math.min(D.T - 1, Math.round(t)))]] || [null])[0] : null);
+let shownSegment;
+function renderSegments() {
+  const el = $("segments"), on = isRun() && D.split;
+  el.hidden = !on; shownSegment = on ? segmentAt(S.pos) : undefined;
+  if (!on) return;
+  el.innerHTML = SEG.filter(([k, , code]) => D.split.indexOf(code) >= 0 || (S.embedded && D.splitStarts[k] != null))
+    .map(([k, label]) => `<button type="button" data-segment="${k}" aria-pressed="${k === shownSegment}">${label}</button>`).join("");
+}
+$("play").addEventListener("click", togglePlay);
+$("speed").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { S.speed = +b.dataset.speed; renderSpeed(); } });
+$("segments").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b || !isRun()) return;
+  const key = b.dataset.segment, first = D.split.indexOf(SEG.find(q => q[0] === key)[2]);
+  if (first >= 0 && key !== segmentAt(S.pos)) { S.pos = first; S.playing = false; dirty = true; renderTransport(); }   // already loaded: just go there
+  else host("segment", { key, runId: D.runId });                                                                      // otherwise ask the host for that window
+});
+
+/* ---------- loop ---------- */
+let prev = performance.now();
+function frame(now) {
+  const dt = Math.min(0.1, (now - prev) / 1000); prev = now;
+  if (S.playing && D) {
+    const before = S.pos;
+    S.pos += RATE * S.speed * dt;
+    // Pause when entering a newly initialised episode, never animate across it.
+    if (isRun() && D.episodeBoundaries) {
+      for (let i = Math.floor(before) + 1; i <= Math.min(D.T - 1, Math.floor(S.pos)); i++) {
+        if (D.episodeBoundaries[i]) { S.pos = i; S.playing = false;
+          notice("新录制开始：储备池已重置，这里没有跨录制的递归传播"); break; }
+      }
+    }
+    if (S.pos >= D.T - 1) { if (isRun()) { S.pos = D.T - 1; S.playing = false; } else S.pos = 0; }
+    dirty = true; renderTransport();
+  }
+  if (dirty && D) { dirty = false; drawPond(); drawTracks(); updateSum(false); }
+  requestAnimationFrame(frame);
+}
+new ResizeObserver(() => { layoutTracks(); drawMini(); }).observe($("stage"));
+window.addEventListener("resize", () => { layoutTracks(); drawMini(); });
+if (window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { readColors(); dirty = staticDirty = true; renderRail(); renderLegend(); drawMini(); });
+
+/* ---------- host API (Qt wrapper or tests) ---------- */
+let toastTimer = 0;
+function notice(text) {
+  const el = $("toast"); el.textContent = String(text); el.classList.add("on");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove("on"), 7000);
+}
+window.RCLab = {
+  version: "0.7.2",
+  setTheme,
+  notice,
+  setEmbedded(on) { S.embedded = !!on; renderRail(); renderStory(); renderSegments(); },
+  loadRun(payload, opts) {
+    S.run = buildRun(payload); renderRail();
+    if ((opts && opts.focus) || S.chapter === RUN) { S.sel = -1; goto(RUN); }
+    else notice(`实验 ${S.run.runId.slice(0, 12)} 已载入，点顶栏“我的实验”查看`);
+  },
+  loadFrames(frames) {
+    if (!S.run) return;
+    S.run = buildRun({ structure: S.run.structure, frames, positions: S.run.pos, runId: S.run.runId });
+    if (S.chapter === RUN) { compute(); S.pos = 0; S.playing = false; layoutTracks(); renderTransport(); renderSegments(); updateObs(); }
+  },
+  go(i) { goto(i); },
+  seek(t) { S.playing = false; S.pos = Math.max(0, Math.min(D.T - 1, t)); dirty = true; renderTransport(); },
+  probe(t) {                      // read-only numbers at step t, for automated fidelity checks
+    const i = Math.max(0, Math.min(D.T - 1, Math.round(t))), p = D.parts;
+    return { shown: D.u[i], model: D.uModel ? D.uModel[i] : null, segment: segmentAt(i),
+             episode: D.episodes ? D.episodes[i] : null, localStep: D.localSteps ? D.localSteps[i] : null,
+             episodeBoundary: !!(D.episodeBoundaries && D.episodeBoundaries[i]),
+             targetIndex: D.outputAtSource ? D.outputAtSource[i] : null,
+             alignedPrediction: D.outputAtSource && D.outputAtSource[i] >= 0 && isFinite(D.outPred[D.outputAtSource[i]])
+               ? D.outPred[D.outputAtSource[i]] : null,
+             legacyMissingBoundaries: !!D.legacyUnbounded,
+             parts: p ? { pos: p.P[i], neg: p.N[i], direct: p.Dr[i], bias: p.bias, net: p.net[i] } : null,
+             predicted: D.kind === "sandbox" && D.fit ? D.fit.pred[i] : null };
+  },
+  state() { return { chapter: S.chapter, done: S.done.slice(), pos: S.pos, playing: S.playing, pokes: S.pokes.slice(), sel: S.sel, trained: S.trained,
+                     echo: D && D.echo ? { len: D.echo.len, settled: D.echo.settled, status: D.echo.status, window: D.echo.window } : null,
+                     parts: (() => { const p = D && D.parts; if (!p) return null; const i = Math.round(S.pos);
+                                     return { pos: p.P[i], neg: p.N[i], direct: p.Dr[i], bias: p.bias, net: p.net[i], inferred: p.inferred, residual: p.residual, ext: p.ext }; })(),
+                     input: D ? { shown: D.u[Math.round(S.pos)], model: D.uModel ? D.uModel[Math.round(S.pos)] : null } : null,
+                     segment: segmentAt(S.pos), segmentPressed: (document.querySelector('#segments [aria-pressed="true"]') || { dataset: {} }).dataset.segment || null,
+                     clock: $("clock").textContent,
+                     episode: D && D.episodes ? D.episodes[Math.round(S.pos)] : null,
+                     localStep: D && D.localSteps ? D.localSteps[Math.round(S.pos)] : null,
+                     episodeBoundary: !!(D && D.episodeBoundaries && D.episodeBoundaries[Math.round(S.pos)]),
+                     legacyMissingBoundaries: !!(D && D.legacyUnbounded),
+                     fit: D && D.fit && D.fit.rmse != null ? { rmse: D.fit.rmse, baseline: D.fit.baseline } : null,
+                     p: { ...S.p }, geo: geo ? { sx: Array.from(geo.sx), sy: Array.from(geo.sy) } : null, rows: TL.rows.map(r => ({ ...r })), kind: D && D.kind }; },
+};
+
+/* ---------- start ---------- */
+const q = new URLSearchParams(location.search);
+if (q.get("theme")) document.documentElement.dataset.theme = q.get("theme") === "dark" ? "dark" : "light";
+S.embedded = q.get("embedded") === "1";
+readColors(); renderSpeed(); goto(0);
+requestAnimationFrame(frame);
+host("ready");
+})();
+</script>
+</body>
+</html>

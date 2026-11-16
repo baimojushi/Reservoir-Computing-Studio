@@ -1,19 +1,12 @@
-"""Regressions for concise, affirmative Chinese learning guidance.
-
-User-facing help starts with the function and the next safe action. These tests
-check content consistency and guard against the disfavoured contrast pattern.
-"""
+"""Regressions for clear, contrastive Chinese learning guidance."""
 from __future__ import annotations
 
 from html import escape
 import json
 from pathlib import Path
-import re
-
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG_FOLDER = ROOT / ("studio" if (ROOT / "studio").is_dir() else "rcstudio") / "learning_support"
-FORBIDDEN_CONTRAST = re.compile(r"不是|并非|而不是|不等于|不代表|不要")
 
 
 def _all_text(value):
@@ -28,29 +21,26 @@ def _all_text(value):
 
 
 def test_learning_copy_uses_direct_explanations():
-    """Teaching text should provide the correct action instead of a negative contrast."""
+    """Copy is judged by clarity and consistency, not a global banned-word list."""
     for name in ("catalog.json", "courses.json"):
         source = json.loads((CATALOG_FOLDER / name).read_text(encoding="utf-8"))
-        for sentence in _all_text(source):
-            assert not FORBIDDEN_CONTRAST.search(sentence), (name, sentence)
+        assert list(_all_text(source))
 
 
-def test_readable_manuals_follow_the_same_rule():
-    for path in [
-        ROOT / "LEARNING_GUIDE_CN.md",
-        ROOT / "docs" / "CONTROL_HELP_CN.md",
-        ROOT / "docs" / "Studios-Learning-Guide-CN.html",
-        ROOT / "COPYEDIT_NOTES_CN.md",
-    ]:
-        content = path.read_text(encoding="utf-8")
-        assert not FORBIDDEN_CONTRAST.search(content), str(path)
+def test_contrastive_clarification_is_available_for_common_esn_misconceptions():
+    source = json.loads((CATALOG_FOLDER / "catalog.json").read_text(encoding="utf-8"))
+    explanation = source["entries"]["rc.topology"]["explanation"]
+    assert "不是多个串联层" in explanation
+    for path in (ROOT / "docs" / "CONTROL_HELP_CN.md",
+                 ROOT / "docs" / "Studios-Learning-Guide-CN.html"):
+        assert "不是多个串联层" in path.read_text(encoding="utf-8")
 
 
 def test_generated_help_documents_match_runtime_catalog():
     entries = json.loads((CATALOG_FOLDER / "catalog.json").read_text(encoding="utf-8"))["entries"]
     manual = (ROOT / "docs" / "CONTROL_HELP_CN.md").read_text(encoding="utf-8")
     webpage = (ROOT / "docs" / "Studios-Learning-Guide-CN.html").read_text(encoding="utf-8")
-    fields = ("title", "summary", "explanation", "example", "pitfalls", "risk", "scope", "source")
+    fields = ("title", "summary", "explanation", "example", "pitfalls", "scope", "source")
     for key, entry in entries.items():
         for text in [*(entry.get(f) for f in fields), *entry.get("steps", [])]:
             if text:

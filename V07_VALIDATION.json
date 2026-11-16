@@ -1,0 +1,41 @@
+{
+  "release": "RCStudio-v0.7.0-Intuitive-Reservoir-Laboratory",
+  "source_baseline": "RC-Studio-V0_6-Intuitive-Reservoir-Laboratory.zip",
+  "generated_at": "2026-11-16",
+  "automated": {
+    "test_files": "tests learning_tests",
+    "runner": "local stand-in for pytest (pytest unavailable offline)",
+    "passed": 135,
+    "skipped": 1,
+    "failed": 0,
+    "v06_baseline_same_runner": {
+      "passed": 119,
+      "skipped": 1
+    }
+  },
+  "additional_checks": {
+    "command_line_check_ok": true,
+    "version": "0.7.0",
+    "help_source_audit_missing": 0,
+    "help_entries": 43,
+    "wheel": "rcstudio_local-0.7.0-py3-none-any.whl",
+    "wheel_contains_lab_page": true,
+    "lab_page_walkthrough": {
+      "script": "scripts/check_lab_page.py",
+      "browser": "headless Chromium 153",
+      "problems": 0,
+      "screenshots": "docs/validation/v07-screens/"
+    },
+    "js_python_state_parity_max_abs_diff": 3e-08,
+    "qt_glue": "executed against PySide6 stub modules only"
+  },
+  "not_verified": [
+    "QtWebEngine embedding inside the PySide6 window: PySide6 is not installed in this build environment",
+    "Windows 10/11 GUI launch, packaging and high-DPI layout",
+    "learn/workbench shell switching as rendered by Qt",
+    "native fallback panel appearance (behaviour fixes only were made)",
+    "frame rate and memory with 350 units x 1200 frames",
+    "real EBrush hardware and physical prediction quality"
+  ],
+  "release_note": "The lab page itself is rendered and walked through automatically. Passing these checks does not claim native desktop acceptance."
+}

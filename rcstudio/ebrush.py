@@ -505,7 +505,9 @@ def train_motion(config, workspace, run_dir, cancel=None, progress=None):
 
     out = Path(run_dir)
     out.mkdir(parents=True, exist_ok=True)
-    arrays = {k: [] for k in ("timestep", "inputs", "truth", "prediction", "split", "states")}
+    arrays = {k: [] for k in ("timestep", "inputs", "truth", "prediction", "split", "states",
+                           "episode_id", "episode_start", "local_step", "target_local_step")}
+    episode_recording_ids, episode_session_ids = [], []
     scores_data = {p: {"true": [], "pred": [], "base": []} for p in ("train", "validation", "test")}
     summary_groups = {p: [] for p in ("train", "validation", "test")}
     count = 0
@@ -527,7 +529,20 @@ def train_motion(config, workspace, run_dir, cancel=None, progress=None):
             scores_data[split]["pred"].append(prediction[valid])
             scores_data[split]["base"].append(persist[valid])
             n = len(prediction)
-            keep = np.arange(n) + count
+            # Per-episode time identity follows the state reset in scan(f).
+            # It is distinct from both globally concatenated frame numbers
+            # and recording_id (one recording can contain multiple sessions).
+            episode_index = len(episode_recording_ids)
+            episode_recording_ids.append(meta["recording_id"])
+            episode_session_ids.append(meta["id"])
+            local = np.arange(n, dtype=np.int32)
+            arrays["episode_id"].append(np.full(n, episode_index, dtype=np.int32))
+            starts = np.zeros(n, dtype=np.bool_)
+            starts[0] = True
+            arrays["episode_start"].append(starts)
+            arrays["local_step"].append(local)
+            arrays["target_local_step"].append(local + horizon)
+            keep = local + count
             plot_pred = prediction.astype(np.float32)
             plot_pred[:washout] = np.nan
             arrays["timestep"].append(keep + horizon)
@@ -546,8 +561,13 @@ def train_motion(config, workspace, run_dir, cancel=None, progress=None):
     np.savez_compressed(out / "model.npz", W=W, win=win, bias=bias, readout=readout,
                         input_mean=xmu, input_std=xsd, target_mean=np.array(ymu),
                         target_std=np.array(ysd), horizon=np.array(horizon), leak=np.array(leak),
+                        washout=np.array(washout), spectral_radius=np.array(m["spectral_radius"]),
+                        density=np.array(m["density"]), input_scaling=np.array(m["input_scaling"]),
                         project=np.array(PROJECT_ID))
-    np.savez_compressed(out / "traces.npz", **{k: np.concatenate(v) for k, v in arrays.items()})
+    np.savez_compressed(out / "traces.npz",
+                        **{k: np.concatenate(v) for k, v in arrays.items()},
+                        episode_recording_ids=np.asarray(episode_recording_ids, dtype="U32"),
+                        episode_session_ids=np.asarray(episode_session_ids, dtype="U32"))
     scores = {}
     for name, item in scores_data.items():
         truth = np.concatenate(item["true"])

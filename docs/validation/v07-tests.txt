@@ -1,0 +1,24 @@
+RC Studio V0.7.0 automated validation
+
+Test files:
+  tests/*.py learning_tests/*.py   (same files `python -m pytest -q tests learning_tests` collects)
+
+Result:
+  135 passed, 1 skipped, 0 failed
+  The skipped module is the optional PySide6 acceptance module.
+  pytest is not installed in this build environment and could not be downloaded; the files were
+  run with a small local stand-in runner (unittest discovery + parametrize expansion). The V0.6
+  baseline gives 119 passed, 1 skipped under the same runner, matching its recorded pytest result.
+  `python -m unittest tests.test_lab_web` -> 15 tests OK.
+
+Additional checks:
+  python -m rcstudio check -> ok
+  python -m rcstudio --version -> 0.7.0
+  python -m rcstudio.learning_support.audit -> 0 missing help bindings (43 entries, 49 constructor sites)
+  python -m pip wheel . --no-deps --no-build-isolation -> rcstudio_local-0.7.0-py3-none-any.whl, includes rcstudio/lab_web/lab.html
+  python scripts/check_lab_page.py -> 0 problems, 0 console errors (headless Chromium 153; 1280x760 light, 1280x760 dark embedded, 390x800)
+  JS engine vs intuitive_lab.run_states -> max abs difference 3.0e-8 over 6 pools x 180 steps x 48 units
+
+Qt glue (lab_web_view.py, gui.py, intuitive_view.py) was executed only against stub modules that
+stand in for PySide6. That finds missing names, bad attribute access and wrong call order; it does
+not render anything. QtWebEngine embedding and native layout on Windows are pending.

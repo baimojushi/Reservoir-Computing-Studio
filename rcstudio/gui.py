@@ -9,13 +9,14 @@ from .learning_support import anchor as _help_anchor
 
 import copy
 import json
+import logging
 import math
 import sys
 
 import numpy as np
 
 try:
-    from PySide6.QtCore import Qt, QTimer, QRectF, QSettings, QThread, Signal
+    from PySide6.QtCore import Qt, QPointF, QTimer, QRectF, QSettings, QThread, Signal
     from PySide6.QtGui import QColor, QBrush, QFont, QPainter, QPen
     from PySide6.QtWidgets import (
         QApplication, QCheckBox, QComboBox, QDoubleSpinBox, QFileDialog,
@@ -32,6 +33,23 @@ from .config import DEFAULT
 from .learning_support.integration import install as install_learning, submitted as learning_submitted
 from .client import ServiceError
 from .ebrush import DEFAULT_EBRUSH, PROJECT_ID, import_source, make_demo
+from .intuitive_lab import stable_positions
+
+
+def make_lab_panel(client):
+    """Prefer the Web lab; report expected WebEngine failures in a visible fallback."""
+    try:
+        from .lab_web_view import LabWebPanel
+        return LabWebPanel(client)
+    except (ImportError, OSError, RuntimeError) as exc:
+        # Unexpected programmer errors (e.g. TypeError) must surface instead of
+        # being silently disguised as a working native fallback.
+        logging.getLogger(__name__).warning("QtWebEngine lab unavailable; switching to native: %s", exc,
+                                             exc_info=True)
+        from .intuitive_view import IntuitiveLabPanel
+        panel = IntuitiveLabPanel(client)
+        panel.set_fallback_reason(f"{type(exc).__name__}: {exc}")
+        return panel
 
 PALETTE = {
     "light": {
@@ -77,6 +95,9 @@ def stylesheet(mode):
     QPushButton#Primary {{ background: {p['primary']}; color: {p['on_primary']};
         border-color: {p['primary']}; }}
     QPushButton#Danger {{ border-color: {p['warning']}; color: {p['warning']}; }}
+    QPushButton#Mode {{ padding: 6px 16px; }}
+    QPushButton#Mode:checked {{ background: {p['primary']}; color: {p['on_primary']};
+        border-color: {p['primary']}; }}
     QProgressBar {{ background: {p['panel_alt']}; border: none; border-radius: 4px;
         min-height: 7px; max-height: 7px; text-align: center; }}
     QProgressBar::chunk {{ background: {p['primary']}; border-radius: 4px; }}
@@ -96,51 +117,65 @@ def stylesheet(mode):
 
 
 class TopologyCanvas(QWidget):
+    """Compact process sketch: input -> one recurrent reservoir -> readout.
+
+    The dots are layout-only symbols. This sidebar sketch never invents layers
+    or claims that geometric proximity represents an actual synaptic relation.
+    """
     def __init__(self, parent=None):
         super().__init__(parent)
         self.units = 120
         self.inputs = 1
         self.theme = "light"
-        self.setMinimumHeight(147)
-        self.setMaximumHeight(180)
+        self.setMinimumHeight(150)
+        self.setMaximumHeight(176)
 
     def paintEvent(self, _event):
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
         colors = PALETTE[self.theme]
         w, h = self.width(), self.height()
-        x0, x1, x2 = 37, w * .51, w-42
-        pts = []
-        for i in range(13):
-            phi = i * 2.39996
-            rad = 18 + (i % 5) * 9
-            pts.append((x1 + rad*math.cos(phi), h*.46 + rad*math.sin(phi)))
-        p.setPen(QPen(QColor(colors["stroke"]), 1.3))
-        for y in np.linspace(28, h-43, min(self.inputs, 5)):
-            for v in (0, 4, 8):
-                p.drawLine(int(x0), int(y), int(pts[v][0]), int(pts[v][1]))
-        for i, (x,y) in enumerate(pts):
-            for target in ((i+3)%13, (i+5)%13):
-                xx, yy = pts[target]
-                p.drawLine(int(x), int(y), int(xx), int(yy))
-            if i % 4 == 0:
-                p.drawLine(int(x), int(y), int(x2), int(h*.46))
-        p.setPen(QPen(QColor(colors["panel"]), .8))
-        p.setBrush(QBrush(QColor(colors["primary"])))
-        for y in np.linspace(28, h-43, min(self.inputs, 5)):
-            p.drawEllipse(QRectF(x0-5, y-5, 10, 10))
-        for i, (x,y) in enumerate(pts):
-            p.setBrush(QBrush(QColor(colors["accent"] if i in (1, 7) else colors["blue"])))
-            p.drawEllipse(QRectF(x-5, y-5, 10, 10))
-        p.setBrush(QBrush(QColor(colors["accent"])))
-        p.drawEllipse(QRectF(x2-7, h*.46-7, 14, 14))
-        p.setPen(QColor(colors["sub"]))
+        ink = QColor(colors["ink"])
+        sub = QColor(colors["sub"])
+        stroke = QColor(colors["stroke"])
+        panel = QColor(colors["panel"])
+        cy = h * 0.52
+        pool = QRectF(w * 0.24, 20, w * 0.53, h - 42)
+        p.setPen(QPen(stroke, 1.0))
+        p.setBrush(QBrush(panel))
+        p.drawRoundedRect(pool, 18, 18)
+        count = min(36, max(12, int(self.units * 0.30)))
+        points = stable_positions(count, seed=202611 + int(self.units))
+        sx = pool.center().x() + points[:, 0] * pool.width() * 0.39
+        sy = pool.center().y() + points[:, 1] * pool.height() * 0.38
+        p.setPen(QPen(stroke, 0.8, Qt.PenStyle.DashLine))
+        p.setBrush(Qt.BrushStyle.NoBrush)
+        p.drawEllipse(pool.adjusted(13, 13, -13, -13))
+        p.setPen(Qt.PenStyle.NoPen)
+        p.setBrush(QBrush(ink))
+        for x, y in zip(sx, sy):
+            p.drawEllipse(QPointF(float(x), float(y)), 3.1, 3.1)
+
+        input_x, output_x = w * 0.10, w * 0.90
+        p.setPen(QPen(QColor(colors["blue"]), 1.5))
+        p.drawLine(QPointF(input_x + 8, cy), QPointF(pool.left(), cy))
+        p.drawLine(QPointF(pool.right(), cy), QPointF(output_x - 8, cy))
+        p.setPen(QPen(ink, 1.4))
+        p.setBrush(QBrush(panel))
+        p.drawEllipse(QPointF(input_x, cy), 6, 6)
+        p.drawEllipse(QPointF(output_x, cy), 7, 7)
+        p.setPen(QPen(QColor(colors["primary"]), 1.4))
+        p.drawEllipse(QPointF(output_x, cy), 3.4, 3.4)
         p.setFont(QFont("Segoe UI", 8))
-        p.drawText(QRectF(0, h-24, 80, 18), Qt.AlignmentFlag.AlignCenter,
+        p.setPen(sub)
+        p.drawText(QRectF(2, cy + 13, w * 0.20, 18), Qt.AlignmentFlag.AlignCenter,
                    f"INPUT · {self.inputs}")
-        p.drawText(QRectF(x1-77, h-24, 154, 18), Qt.AlignmentFlag.AlignCenter,
-                   f"RESERVOIR · {self.units}")
-        p.drawText(QRectF(w-84, h-24, 84, 18), Qt.AlignmentFlag.AlignCenter, "READOUT")
+        p.drawText(QRectF(pool.left(), 4, pool.width(), 16), Qt.AlignmentFlag.AlignCenter,
+                   f"ONE RESERVOIR · {self.units}")
+        p.drawText(QRectF(pool.left(), pool.bottom() - 19, pool.width(), 14),
+                   Qt.AlignmentFlag.AlignCenter, "RECURRENT STATE FIELD")
+        p.drawText(QRectF(w * 0.79, cy + 13, w * 0.20, 18), Qt.AlignmentFlag.AlignCenter,
+                   "READOUT")
         p.end()
 
 
@@ -185,6 +220,8 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.client = client
         self.current_run = None
+        self._run_picked_by_user = False
+        self.lab_progress = {}          # lab chapter -> what the learner did; read by the courses
         self.last_plotted = None
         self.last_signature = None
         self.latest_sessions = []
@@ -204,6 +241,8 @@ class MainWindow(QMainWindow):
         self.timer.timeout.connect(self._refresh)
         self.timer.start(1800)
         self.learning = install_learning(self)
+        mode = self.settings.value("shell_mode", "learn")
+        self._set_shell_mode(mode if mode in ("learn", "workbench") else "learn")
 
     def _build(self):
         root = QWidget()
@@ -221,6 +260,15 @@ class MainWindow(QMainWindow):
         brand.addWidget(logo)
         brand.addWidget(make_caption("Reservoir Computing  /  本地研究工作台"))
         top_lay.addLayout(brand)
+        top_lay.addSpacing(26)
+        # Two ways to use the window: learn what an ESN does, or run research experiments.
+        self.learn_mode_button = _help_anchor(QPushButton("认识 ESN"), 'ui.mode')
+        self.work_mode_button = _help_anchor(QPushButton("研究工作台"), 'ui.mode')
+        for button, mode in ((self.learn_mode_button, "learn"), (self.work_mode_button, "workbench")):
+            button.setObjectName("Mode")
+            button.setCheckable(True)
+            button.clicked.connect(lambda _checked=False, m=mode: self._set_shell_mode(m))
+            top_lay.addWidget(button)
         top_lay.addStretch()
         self.connection = QLabel("● 正在连接")
         top_lay.addWidget(self.connection)
@@ -228,13 +276,13 @@ class MainWindow(QMainWindow):
         self.theme_button.clicked.connect(self._toggle_theme)
         top_lay.addWidget(self.theme_button)
         self.learning_button = _help_anchor(QPushButton("帮助 · 新手入门"), "ui.help")
-        self.learning_button.clicked.connect(lambda: self.learning.open_center(courses=True))
+        self.learning_button.clicked.connect(self._open_courses)
         top_lay.addWidget(self.learning_button)
         outer.addWidget(top)
 
         main = QSplitter(Qt.Orientation.Horizontal)
         main.setChildrenCollapsible(False)
-        sidebar = QScrollArea()
+        sidebar = self.sidebar = QScrollArea()
         sidebar.setWidgetResizable(True)
         sidebar.setMinimumWidth(338)
         sidebar.setMaximumWidth(440)
@@ -259,10 +307,11 @@ class MainWindow(QMainWindow):
         self.dataset_stack.addWidget(self._ebrush_panel())
         controls.addWidget(self.dataset_stack)
 
-        diagram = _help_anchor(QGroupBox("模型拓扑 · ESN"), 'rc.topology')
+        diagram = _help_anchor(QGroupBox("计算流程 · 单一储备池"), 'rc.topology')
         diagram_lay = QVBoxLayout(diagram)
         self.topology = TopologyCanvas()
         diagram_lay.addWidget(self.topology)
+        diagram_lay.addWidget(make_caption("节点仅作排版示意；实际递归连接由模型权重矩阵定义。"))
         controls.addWidget(diagram)
 
         configuration = _help_anchor(QGroupBox("模型参数"), 'rc.parameters')
@@ -316,7 +365,9 @@ class MainWindow(QMainWindow):
         right_box = QVBoxLayout(right)
         right_box.setContentsMargins(8, 15, 18, 14)
         right_box.setSpacing(13)
-        metrics = QHBoxLayout()
+        self.metrics_row = QWidget()
+        metrics = QHBoxLayout(self.metrics_row)
+        metrics.setContentsMargins(0, 0, 0, 0)
         metrics.setSpacing(10)
         self.metric_values = {}
         for key, caption in [("rmse", "测试 RMSE"), ("baseline", "持续性基线 RMSE"),
@@ -328,7 +379,7 @@ class MainWindow(QMainWindow):
             _help_anchor(label, topic)
             self.metric_values[key] = label
             metrics.addWidget(card)
-        right_box.addLayout(metrics)
+        right_box.addWidget(self.metrics_row)
 
         self.progress = _help_anchor(QProgressBar(), 'rc.progress')
         self.progress.setRange(0, 100)
@@ -339,20 +390,28 @@ class MainWindow(QMainWindow):
         split = QSplitter(Qt.Orientation.Vertical)
         split.setChildrenCollapsible(False)
         self.tabs = _help_anchor(QTabWidget(), 'ui.tabs')
+        self.lab = _help_anchor(make_lab_panel(self.client), 'rc.echo')
+        if hasattr(self.lab, "workbench_requested"):
+            self.lab.workbench_requested.connect(lambda: self._set_shell_mode("workbench"))
+        if hasattr(self.lab, "chapter_completed"):
+            self.lab.chapter_completed.connect(self._lab_chapter_done)
+        self.tabs.addTab(self.lab, "直觉实验室")
+        self.advanced_tabs = _help_anchor(QTabWidget(), 'ui.tabs')
         self.plot = _help_anchor(pg.PlotWidget(), 'rc.plot')
         self.plot.setLabel("bottom", "Time step")
         self.plot.setLabel("left", "Signal / angular speed")
         self.plot.showGrid(x=True, y=True, alpha=.18)
-        self.tabs.addTab(self.plot, "预测曲线")
+        self.advanced_tabs.addTab(self.plot, "预测曲线")
         self.heatmap = _help_anchor(pg.ImageView(view=pg.PlotItem()), 'rc.states')
-        self.tabs.addTab(self.heatmap, "Reservoir states")
+        self.advanced_tabs.addTab(self.heatmap, "状态矩阵")
         self.metrics_panel = _help_anchor(QTextEdit(), 'rc.diagnostics')
         self.metrics_panel.setReadOnly(True)
         self.metrics_panel.setPlaceholderText("选择实验可查看验证/测试指标与配置。")
-        self.tabs.addTab(self.metrics_panel, "实验诊断")
+        self.advanced_tabs.addTab(self.metrics_panel, "实验诊断")
+        self.tabs.addTab(self.advanced_tabs, "高级诊断")
         split.addWidget(self.tabs)
 
-        history = QFrame()
+        history = self.history = QFrame()
         history.setObjectName("SectionCard")
         hbox = QVBoxLayout(history)
         hrow = QHBoxLayout()
@@ -453,8 +512,36 @@ class MainWindow(QMainWindow):
         self.plot.getPlotItem().getAxis("left").setTextPen(p["sub"])
         if self.last_plotted and self.last_plotted == self.current_run:
             self._draw(self.current_run)
+        if hasattr(self, "lab"):
+            self.lab.set_theme(theme)
         if hasattr(self, "learning"):
             self.learning.set_theme(theme)
+
+    def _set_shell_mode(self, mode):
+        """'learn' shows only the lab; 'workbench' shows data, parameters, metrics and history."""
+        learn = mode == "learn"
+        self.shell_mode = "learn" if learn else "workbench"
+        self.settings.setValue("shell_mode", self.shell_mode)
+        for widget in (self.sidebar, self.metrics_row, self.progress, self.history, self.log_text):
+            widget.setVisible(not learn)
+        self.tabs.tabBar().setVisible(not learn)
+        if learn:
+            self.tabs.setCurrentWidget(self.lab)
+        self.learn_mode_button.setChecked(learn)
+        self.work_mode_button.setChecked(not learn)
+
+    def _open_courses(self):
+        # Each course step reveals its own target: lab steps keep the lab in view, workbench
+        # steps switch to the workbench (see learning_support/integration.py: reveal).
+        self.learning.open_center(courses=True)
+
+    def _lab_chapter_done(self, chapter, detail=""):
+        """The lab reports what the learner did; courses cite it instead of asking for a redo."""
+        if not chapter:
+            return
+        self.lab_progress[str(chapter)] = str(detail)
+        if hasattr(self, "learning"):
+            self.learning.notify("rc.lab." + str(chapter))
 
     def _toggle_theme(self):
         self._set_theme("dark" if self.theme == "light" else "light")
@@ -649,6 +736,7 @@ class MainWindow(QMainWindow):
         if item:
             self.current_run = item.text()
             self.last_plotted = None
+            self._run_picked_by_user = True
             self._show_selected()
 
     def _load_config(self):
@@ -721,6 +809,9 @@ class MainWindow(QMainWindow):
             self._notify(str(exc))
 
     def _draw(self, run_id):
+        # Only a run the user clicked may take over the lab; background refreshes load quietly.
+        picked, self._run_picked_by_user = self._run_picked_by_user, False
+        self.lab.show_run(run_id, focus=picked)
         traces = self.client.traces(run_id, limit=750, units=32)
         x = np.asarray(traces["timestep"], dtype=float)
         true = np.asarray(traces["truth"], dtype=float)
@@ -764,6 +855,8 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         if hasattr(self, "learning"):
             self.learning.shutdown()
+        if hasattr(self, "lab"):
+            self.lab.shutdown()
         super().closeEvent(event)
 
 

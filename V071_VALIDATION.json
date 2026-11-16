@@ -1,0 +1,56 @@
+{
+  "release": "RCStudio-v0.7.1-Fidelity-and-Interaction-Fixes",
+  "merge_base": "uploaded Reservoir-Computing-Studio-main (package version 0.4.0)",
+  "generated_at": "2026-11-16",
+  "automated": {
+    "test_files": "tests learning_tests",
+    "runner": "local stand-in for pytest (pytest unavailable offline)",
+    "passed": 148,
+    "skipped": 1,
+    "failed": 0
+  },
+  "review_items": {
+    "P0_input_standardisation": {
+      "reproduced": "u(0) raw 0.906786, model -0.104333, V0.7.0 page +0.078115; 69/1200 frames sign-flipped",
+      "after": "page model input equals engine input within 1e-9; 0 sign mismatches"
+    },
+    "P0_echo_window": {
+      "reproduced": "48 units, radius 0.90, leak 0.10: undecided in 96 steps, below threshold at step 110 of 160",
+      "after": "engine verdict over 2000 steps; page shows 110 steps; 96-step-only payloads read as 'window too short'"
+    },
+    "P1_readout_cancellation": "signed lines, two stacked columns, numeric row; pieces sum to prediction within 1e-9",
+    "P1_direct_and_bias": "included in columns; direct term drawn over the pool; inferred and hollow for multi-input runs",
+    "P1_weight_rescale": "weights passed through in model units",
+    "P1_segment_sync": "button, clock label and playhead share one source",
+    "P1_courses": "course rc_lab gated by lab observations",
+    "P2_small_screens": "primary action on stage at <= 780 px; visible at 360x640",
+    "P2_keyboard_nodes": "arrow keys move between nodes"
+  },
+  "compatibility": {
+    "main_files_removed": 0,
+    "main_files_identical": 31,
+    "main_files_modified": 21,
+    "files_added": 29,
+    "main_tests_on_new_code": {
+      "passed": 87,
+      "skipped": 1,
+      "failed": 2,
+      "failed_reason": "test_copyedit_style.py banned-word rule, replaced on purpose in V0.6"
+    },
+    "parent_project_probe": "E-Brush studio/rcstudio_bridge.py probe_rcstudio -> verified True"
+  },
+  "additional_checks": {
+    "version": "0.7.1",
+    "command_line_check_ok": true,
+    "help_source_audit_missing": 0,
+    "help_docs_in_sync": true,
+    "lab_page_walkthrough_problems": 0
+  },
+  "not_verified": [
+    "QtWebEngine embedding inside the PySide6 window (PySide6 not installed here)",
+    "Windows GUI launch, high-DPI layout, learn/workbench switching as rendered by Qt",
+    "course coach dialog next to the web lab on a real desktop",
+    "frame rate and memory with 350 units x 1200 frames",
+    "real EBrush hardware and physical prediction quality"
+  ]
+}

@@ -1,0 +1,250 @@
+{
+  "project": "RC Studio v0.7.2",
+  "verification": "Native HTML (unchanged) in real headless Chromium with actual NumPy/SciPy EBrush train_motion() output",
+  "window_start": 170,
+  "window_frames": 480,
+  "episode_boundary_indices": [
+    80,
+    330
+  ],
+  "first_boundary": {
+    "probe": {
+      "shown": 0.2307016365248703,
+      "model": null,
+      "segment": "train",
+      "episode": 1,
+      "localStep": 0,
+      "episodeBoundary": true,
+      "targetIndex": 90,
+      "alignedPrediction": null,
+      "legacyMissingBoundaries": false,
+      "parts": {
+        "pos": 2.9444912370129996,
+        "neg": -2.957622798933,
+        "direct": null,
+        "bias": 0.1032385,
+        "net": null
+      },
+      "predicted": null
+    },
+    "previous": {
+      "shown": -0.47745181215473853,
+      "model": null,
+      "segment": "test",
+      "episode": 0,
+      "localStep": 249,
+      "episodeBoundary": false,
+      "targetIndex": -1,
+      "alignedPrediction": null,
+      "legacyMissingBoundaries": false,
+      "parts": {
+        "pos": 5.411667821196,
+        "neg": -6.542642817854001,
+        "direct": -0.1587202743243763,
+        "bias": 0.1032385,
+        "net": -1.186456770982378
+      },
+      "predicted": null
+    },
+    "state": {
+      "episode": 1,
+      "localStep": 0,
+      "episodeBoundary": true,
+      "clock": "第 250 帧 / 共 1250 帧（训练段） · 录制片段 2 · 本段输入第 0 步 → 目标第 10 步",
+      "segment": "train"
+    }
+  },
+  "second_boundary_state": {
+    "episode": 2,
+    "localStep": 0,
+    "episodeBoundary": true,
+    "clock": "第 500 帧 / 共 1250 帧（训练段） · 录制片段 3 · 本段输入第 0 步 → 目标第 10 步",
+    "segment": "train"
+  },
+  "around_first": [
+    {
+      "shown": -0.40406386401065675,
+      "model": null,
+      "segment": "test",
+      "episode": 0,
+      "localStep": 239,
+      "episodeBoundary": false,
+      "targetIndex": 79,
+      "alignedPrediction": -0.5837025697893062,
+      "legacyMissingBoundaries": false,
+      "parts": {
+        "pos": 4.785949610941,
+        "neg": -6.325438377026,
+        "direct": -0.11257887563749769,
+        "bias": 0.1032385,
+        "net": -1.548829141722498
+      },
+      "predicted": null
+    },
+    {
+      "shown": -0.44371014737553316,
+      "model": null,
+      "segment": "test",
+      "episode": 0,
+      "localStep": 240,
+      "episodeBoundary": false,
+      "targetIndex": -1,
+      "alignedPrediction": null,
+      "legacyMissingBoundaries": false,
+      "parts": {
+        "pos": 5.4373145199640005,
+        "neg": -6.773258870077999,
+        "direct": -0.23006123778547938,
+        "bias": 0.1032385,
+        "net": -1.462767087899478
+      },
+      "predicted": null
+    },
+    {
+      "shown": -0.47745181215473853,
+      "model": null,
+      "segment": "test",
+      "episode": 0,
+      "localStep": 249,
+      "episodeBoundary": false,
+      "targetIndex": -1,
+      "alignedPrediction": null,
+      "legacyMissingBoundaries": false,
+      "parts": {
+        "pos": 5.411667821196,
+        "neg": -6.542642817854001,
+        "direct": -0.1587202743243763,
+        "bias": 0.1032385,
+        "net": -1.186456770982378
+      },
+      "predicted": null
+    },
+    {
+      "shown": 0.2307016365248703,
+      "model": null,
+      "segment": "train",
+      "episode": 1,
+      "localStep": 0,
+      "episodeBoundary": true,
+      "targetIndex": 90,
+      "alignedPrediction": null,
+      "legacyMissingBoundaries": false,
+      "parts": {
+        "pos": 2.9444912370129996,
+        "neg": -2.957622798933,
+        "direct": null,
+        "bias": 0.1032385,
+        "net": null
+      },
+      "predicted": null
+    },
+    {
+      "shown": 0.1170385925041556,
+      "model": null,
+      "segment": "train",
+      "episode": 1,
+      "localStep": 1,
+      "episodeBoundary": false,
+      "targetIndex": 91,
+      "alignedPrediction": null,
+      "legacyMissingBoundaries": false,
+      "parts": {
+        "pos": 5.079353186825,
+        "neg": -5.030937534516,
+        "direct": null,
+        "bias": 0.1032385,
+        "net": null
+      },
+      "predicted": null
+    },
+    {
+      "shown": 0.269073019797229,
+      "model": null,
+      "segment": "train",
+      "episode": 1,
+      "localStep": 15,
+      "episodeBoundary": false,
+      "targetIndex": 105,
+      "alignedPrediction": null,
+      "legacyMissingBoundaries": false,
+      "parts": {
+        "pos": 10.024942649360998,
+        "neg": -9.046841072331999,
+        "direct": null,
+        "bias": 0.1032385,
+        "net": null
+      },
+      "predicted": null
+    },
+    {
+      "shown": 0.576814554053691,
+      "model": null,
+      "segment": "train",
+      "episode": 1,
+      "localStep": 16,
+      "episodeBoundary": false,
+      "targetIndex": 106,
+      "alignedPrediction": 0.5302938623981485,
+      "legacyMissingBoundaries": false,
+      "parts": {
+        "pos": 10.428471092033998,
+        "neg": -9.163138417352002,
+        "direct": -0.07445489013755413,
+        "bias": 0.1032385,
+        "net": 1.2941162845444423
+      },
+      "predicted": null
+    },
+    {
+      "shown": 0.4632931655988114,
+      "model": null,
+      "segment": "train",
+      "episode": 1,
+      "localStep": 20,
+      "episodeBoundary": false,
+      "targetIndex": 110,
+      "alignedPrediction": 0.3694096234511356,
+      "legacyMissingBoundaries": false,
+      "parts": {
+        "pos": 9.863056343121,
+        "neg": -8.960900103658,
+        "direct": -0.12185886438604854,
+        "bias": 0.1032385,
+        "net": 0.8835358750769517
+      },
+      "predicted": null
+    }
+  ],
+  "legacy": {
+    "state": {
+      "legacyMissingBoundaries": true,
+      "clock": "第 170 帧 / 共 1250 帧（测试段）",
+      "kind": "run"
+    },
+    "probe": {
+      "shown": 0.2307016365248703,
+      "model": null,
+      "segment": "train",
+      "episode": 0,
+      "localStep": 250,
+      "episodeBoundary": false,
+      "targetIndex": -1,
+      "alignedPrediction": null,
+      "legacyMissingBoundaries": true,
+      "parts": null,
+      "predicted": null
+    }
+  },
+  "javascript_errors": [],
+  "checks": {
+    "real_boundaries": true,
+    "first_boundary_flag": true,
+    "new_episode_has_local_step_zero": true,
+    "prediction_absent_in_new_washout": true,
+    "source_target_never_crosses": true,
+    "page_at_boundary": true,
+    "second_boundary_highlight": true,
+    "old_data_warns_and_hides_forecast": true,
+    "no_javascript_errors": true
+  }
+}

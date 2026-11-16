@@ -1,0 +1,29 @@
+{
+  "release": "RCStudio-v0.6.0-Intuitive-Reservoir-Laboratory",
+  "source_baseline": "user-uploaded Reservoir-Computing-Studio-main source, identified in README as V0.4.1",
+  "generated_at": "2026-11-15",
+  "automated": {
+    "command": "python -m pytest -q tests learning_tests",
+    "passed": 119,
+    "skipped": 1,
+    "subtests_passed": 6,
+    "failed": 0
+  },
+  "additional_checks": {
+    "command_line_check": "python -m rcstudio check",
+    "command_line_check_ok": true,
+    "version": "0.6.0",
+    "help_source_audit_missing": 0,
+    "wheel": "rcstudio_local-0.6.0-py3-none-any.whl",
+    "wheel_build": "passed with --no-build-isolation using installed setuptools"
+  },
+  "not_verified": [
+    "PySide6 native rendering and widget signal behavior: PySide6 is not installed in this build environment",
+    "Windows 10/11 GUI launch and packaging",
+    "1366x768 and high-DPI layout",
+    "mouse node picking, wheel zoom and hand-drawn input feel",
+    "native playback frame rate and memory use",
+    "real EBrush hardware and physical prediction quality"
+  ],
+  "release_note": "The GUI architecture and numerical sandbox are implemented in source. Automated numerical and service tests passing does not claim native desktop visual acceptance."
+}

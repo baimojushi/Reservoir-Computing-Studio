@@ -29,8 +29,27 @@ def submitted(window, cfg, run_id):
     manager.record_context("submitted_recordings", len({m["recording_id"] for m in entries}))
     manager.notify("rc.run.submitted")
 
+LAB_CHAPTERS = {"poke": "敲一下", "nodes": "各有反应", "readout": "读出", "knobs": "三个旋钮", "free": "自由实验"}
+LAB_HELP = ("rc.echo", "rc.echo.playback", "rc.echo.layers")
+ALWAYS_VISIBLE_HELP = ("ui.mode", "ui.help", "ui.theme", "rc.connection")
+
+
+def lab_observation(window, chapter):
+    """Has this lab chapter already happened? Cites what the learner did; never asks for a redo."""
+    done = getattr(window, "lab_progress", None) or {}
+    label = LAB_CHAPTERS.get(chapter, chapter)
+    if chapter in done:
+        detail = str(done[chapter] or "").strip()
+        return True, f"实验室已记录“{label}”" + (f"：{detail}" if detail else "") + "。不需要重做。"
+    if not getattr(getattr(window, "lab", None), "is_web", False):
+        return False, "原生实验室也能记录敲击、选节点、查看训练读出和调节旋钮；请使用对应控件。"
+    return False, f"还没有在直觉实验室完成“{label}”；做完后这里会自动通过。"
+
+
 def evaluate(window, name, session):
     """Read existing GUI state/cache only; polling does not create extra HTTP requests."""
+    if name.startswith("rc.lab."):
+        return lab_observation(window, name[len("rc.lab."):])
     project = window.project_box.currentData()
     if name == "rc.generic":
         return project == "generic_esn", "当前项目：" + str(project)
@@ -90,10 +109,18 @@ def install(window):
                 if key: anchor(label.widget(), key)
     def reveal(key):
         # Do not change project_box: it would also reset model defaults.
+        if key in LAB_HELP:
+            window.tabs.setCurrentWidget(window.lab)
+            return
+        # Every other course target lives in the research workbench panels.
+        if (key not in ALWAYS_VISIBLE_HELP and getattr(window, "shell_mode", "workbench") == "learn"
+                and hasattr(window, "_set_shell_mode")):
+            window._set_shell_mode("workbench")
         target = {"rc.plot": window.plot, "rc.states": window.heatmap,
                   "rc.diagnostics": window.metrics_panel}.get(key)
         if target is not None:
-            window.tabs.setCurrentWidget(target)
+            window.tabs.setCurrentWidget(window.advanced_tabs)
+            window.advanced_tabs.setCurrentWidget(target)
     return LearningManager(
         window, Path(__file__).parent, app_id="RCStudio", app_name="RC Studio",
         mode=window.theme, reveal_hook=reveal,

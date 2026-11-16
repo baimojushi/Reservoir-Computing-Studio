@@ -1,0 +1,15 @@
+RC Studio V0.6.0 automated validation
+
+Command:
+  python -m pytest -q tests learning_tests
+
+Result:
+  119 passed, 1 skipped, 6 subtests passed
+
+Additional checks:
+  python -m rcstudio check -> ok
+  python -m rcstudio --version -> 0.6.0
+  python -m rcstudio.learning_support.audit -> 0 missing help bindings
+  python -m pip wheel . --no-deps --no-build-isolation -> wheel built
+
+Native Qt/Windows GUI acceptance is pending because PySide6 is unavailable in this environment.

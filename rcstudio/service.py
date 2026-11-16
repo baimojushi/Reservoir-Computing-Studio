@@ -10,7 +10,8 @@ from urllib.parse import parse_qs, urlsplit
 
 from . import __version__
 from .config import ConfigurationError, normalize_config
-from .core import ExperimentCancelled, sample_traces, train_esn
+from .core import (ExperimentCancelled, reservoir_frames, reservoir_structure,
+                   sample_traces, train_esn)
 from .storage import Workspace
 from .ebrush import PROJECT_ID, normalize_ebrush_config, list_sessions, preflight_training, train_motion
 
@@ -185,6 +186,23 @@ class RCHandler(BaseHTTPRequestHandler):
                         units=int(query.get("units", ["24"])[0]),
                     )
                     return self._json(200, trace)
+
+                if len(parts) in (4, 5) and parts[:2] == ["v1", "runs"] \
+                        and parts[3] == "reservoir" \
+                        and (len(parts) == 4 or parts[4] == "frames"):
+                    run = svc.workspace.get_run(parts[2])
+                    if not run:
+                        return self._json(404, {"error": "Run not found"})
+                    if run["status"] != "finished":
+                        return self._json(409, {"error": "Run is not finished"})
+                    folder = svc.workspace.artifact_dir(parts[2])
+                    if len(parts) == 4:
+                        return self._json(200, reservoir_structure(
+                            folder, max_edges=int(query.get("edges", ["1200"])[0])))
+                    return self._json(200, reservoir_frames(
+                        folder, start=int(query.get("start", ["0"])[0]),
+                        count=int(query.get("count", ["360"])[0]),
+                        stride=int(query.get("stride", ["1"])[0])))
 
             if self.command == "POST":
                 length = int(self.headers.get("Content-Length", "-1"))

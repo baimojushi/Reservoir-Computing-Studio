@@ -1,0 +1,39 @@
+{
+  "project": "RC Studio · Intuitive Reservoir Laboratory",
+  "version": "0.7.2",
+  "basis": "RC-Studio-V0_7_1-merged-main.zip (user-provided complete project)",
+  "scope": "real code changes to ESN training trace schema, read-only API, Web and native Qt fallback",
+  "tests": {
+    "command": "python -m pytest -q tests learning_tests",
+    "passed": 155,
+    "skipped": 1,
+    "failed": 0,
+    "subtests_passed": 6,
+    "source": "docs/validation/v072-tests.txt"
+  },
+  "browser": {
+    "technology": "real system Chromium with Playwright, unmodified shipped lab.html",
+    "regular_scenarios": 8,
+    "regular_scenarios_failed": 0,
+    "ebrush_real_engine_acceptance_checks": 9,
+    "ebrush_acceptance_failed": 0,
+    "javascript_page_errors": 0,
+    "source": "docs/validation/v072-browser.json",
+    "screens": "docs/validation/v072-screens/"
+  },
+  "numerical": {
+    "engine": "real rcstudio.ebrush.train_motion() executed on make_demo() synthetic multi-episode recordings",
+    "episodes": 5,
+    "window_start": 170,
+    "window_frames": 480,
+    "boundaries_window_indices": [80, 330],
+    "cross_episode_forecast_shift": "forbidden by episode-local lookup",
+    "legacy_misleading_forecasts": "fail-closed: hidden until retrained"
+  },
+  "packaging": "rcstudio_local-0.7.2-py3-none-any.whl built",
+  "limitations": [
+    "PySide6 is unavailable here; Windows Qt native/QtWebEngine was not visually tested",
+    "synthetic EBrush training inputs are not real handwriting or physical measurements",
+    "real-time inference latency on user hardware was not measured"
+  ]
+}
